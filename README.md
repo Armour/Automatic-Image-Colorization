@@ -19,8 +19,10 @@ Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](
 
 ## How to use
 
-* Use pre-trained model
-    * Model can be downloaded here
+* First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
+
+* Use pre-trained residual encoder model
+    * Model can be downloaded [here]()
 
 * Train yourself
     1. Change the `learning rate`, `batch size` and `training_iters` according to your goal
