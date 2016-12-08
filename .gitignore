@@ -1,6 +1,6 @@
 # IntelliJ project files
 .idea
-.pyc
+*.pyc
 vgg/vgg16.npy
 summary/
 train2014/
