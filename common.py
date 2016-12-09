@@ -87,12 +87,7 @@ def init_model(train=True):
         cost = (u_channel_cost + v_channel_cost) / 2
 
     # Using different learning rate in different training steps
-    if tf.less_equal(global_step, 25000) is not None:
-        lr = learning_rate[0]
-    elif tf.less_equal(global_step, 50000) is not None:
-        lr = learning_rate[1]
-    else:
-        lr = learning_rate[2]
+    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 5000)), tf.float32))
 
     # Optimizer
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cost, global_step=global_step)

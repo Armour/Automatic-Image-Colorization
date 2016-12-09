@@ -13,7 +13,7 @@ debug = True
 image_size = 224
 
 # Parameters for neural network
-learning_rate = [1e-6, 1e-7, 1e-8]  # The learning rate for different iterations, see common.py for usage
+learning_rate = 1e-6  # Initial learning rate, every 5000 step we divide this by 2
 training_iters = 80000  # The training iterations number
 batch_size = 30  # The batch size
 display_step = 1  # Display loss for each step
