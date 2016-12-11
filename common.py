@@ -85,7 +85,7 @@ def init_model(train=True):
                    exclusive=True, name="cost")
 
     # Using different learning rate in different training steps
-    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 8000)), tf.float32), name="learning_rate")
+    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 160000)), tf.float32), name="learning_rate")
 
     # Optimizer
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cost, global_step=global_step)
