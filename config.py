@@ -7,18 +7,18 @@ from tensorflow.python.ops.image_ops import ResizeMethod
 
 
 # Debug flag, if true, will check model shape using assert in each step and skip gray image check part (to save time)
-debug = True
+debug = False
 
 # Image size for training
 image_size = 224
 
 # Parameters for neural network
-learning_rate = 1e-6  # Initial learning rate, every 5000 step we divide this by 2
+learning_rate = 1e-4  # Initial learning rate, every 5000 step we divide this by 2
 training_iters = 80000  # The training iterations number
 batch_size = 30  # The batch size
 display_step = 1  # Display loss for each step
 test_step = 1000  # Test and save image during training phase
-save_step = 5000  # Save our model
+save_step = 10000  # Save our model
 dequeue_buffer_size = 1000
 
 # Image resize method

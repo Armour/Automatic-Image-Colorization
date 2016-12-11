@@ -91,7 +91,7 @@ class ResidualEncoder(object):
             if relu:
                 output = tf.nn.relu(output, name="relu")
             else:
-                output = tf.tanh(output, name="tanh")
+                output = tf.sigmoid(output, name="sigmoid")
             return output
 
     def build(self, input_data, vgg, is_training):

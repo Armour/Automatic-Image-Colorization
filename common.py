@@ -56,12 +56,12 @@ def init_model(train=True):
 
     # Color image
     color_image_rgb = input_pipeline(file_paths, batch_size)
-    color_image_yuv = rgb_to_yuv(color_image_rgb)
+    color_image_yuv = rgb_to_yuv(color_image_rgb, "rgb2yuv_for_color_image")
 
     # Gray image
     gray_image = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image")
     gray_image_rgb = tf.image.grayscale_to_rgb(gray_image, name="gray_image_rgb")
-    gray_image_yuv = rgb_to_yuv(gray_image_rgb)
+    gray_image_yuv = rgb_to_yuv(gray_image_rgb, "rgb2yuv_for_gray_image")
     gray_image = tf.concat(concat_dim=3, values=[gray_image, gray_image, gray_image], name="gray_image_input")
 
     # Build vgg model
@@ -71,7 +71,7 @@ def init_model(train=True):
     # Predict model
     predict = residual_encoder.build(input_data=gray_image, vgg=vgg, is_training=is_training)
     predict_yuv = tf.concat(concat_dim=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
-    predict_rgb = yuv_to_rgb(predict_yuv)
+    predict_rgb = yuv_to_rgb(predict_yuv, "yuv2rgb_for_pred_image")
 
     # Cost
     cost = residual_encoder.get_cost(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
@@ -79,15 +79,13 @@ def init_model(train=True):
     u_channel_cost = tf.slice(cost, [0, 0, 0, 0], [-1, -1, -1, 1], name="u_channel_cost")
     v_channel_cost = tf.slice(cost, [0, 0, 0, 1], [-1, -1, -1, 1], name="v_channel_cost")
 
-    if uv == 1:
-        cost = u_channel_cost
-    elif uv == 2:
-        cost = v_channel_cost
-    else:
-        cost = (u_channel_cost + v_channel_cost) / 2
+    cost = tf.case({tf.equal(uv, 1): lambda: u_channel_cost,
+                    tf.equal(uv, 2): lambda: v_channel_cost},
+                   default=lambda: (u_channel_cost + v_channel_cost) / 2,
+                   exclusive=True, name="cost")
 
     # Using different learning rate in different training steps
-    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 5000)), tf.float32))
+    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 8000)), tf.float32), name="learning_rate")
 
     # Optimizer
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cost, global_step=global_step)
