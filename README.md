@@ -26,7 +26,8 @@ Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](
 * First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
 
 * Use pre-trained residual encoder model
-    * Model can be downloaded [here]()
+    * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/1.0)
+    * Uncompress and put all files under `model_path` which you can change in config.py
 
 * Train yourself
     1. Change the `learning rate`, `batch size` and `training_iters` according to your goal
