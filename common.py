@@ -55,7 +55,7 @@ def init_model(train=True):
     residual_encoder = ResidualEncoder()
 
     # Color image
-    color_image_rgb = input_pipeline(file_paths, batch_size)
+    color_image_rgb = input_pipeline(file_paths, batch_size, test=not train)
     color_image_yuv = rgb_to_yuv(color_image_rgb, "rgb2yuv_for_color_image")
 
     # Gray image
@@ -85,10 +85,10 @@ def init_model(train=True):
                    exclusive=True, name="cost")
 
     # Using different learning rate in different training steps
-    lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 160000)), tf.float32), name="learning_rate")
+    # lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 160000)), tf.float32), name="learning_rate")
 
     # Optimizer
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cost, global_step=global_step)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost, global_step=global_step)
 
     # Summaries
     print "Init summaries"

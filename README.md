@@ -17,6 +17,10 @@ Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](
 * `train.py`: train the residual encoder model using tensorflow build-in GradientDescentOptimizer
 * `test.py`: test your own image and save the output image
 
+## Tensorflow graph
+
+![](images/residuall_encoder.png)
+
 ## How to use
 
 * First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder

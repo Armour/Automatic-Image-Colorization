@@ -13,7 +13,7 @@ debug = False
 image_size = 224
 
 # Parameters for neural network
-learning_rate = 1e-4  # Initial learning rate, every 5000 step we divide this by 2
+learning_rate = 1e-4  # Learning rate
 training_iters = 2400000  # The training iterations number
 batch_size = 1  # The batch size
 display_step = 1  # Display loss for each step
