@@ -2,20 +2,18 @@
 
 ## Overview
 
-This is a tensorflow version implementation for Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/).
-
-Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
+This is a Tensorflow implementation of the Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/) and the pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
 
 ## Structure
 
 * `config.py`: config variables like learning rate, batch size and so on
-* `image_helper.py`: all function related to image manipulation
+* `image_helper.py`: all functions related to image manipulation
 * `read_input.py`: input related functions
 * `residual_encoder.py`: the residual encoder model
-* `batchnorm.py`: batch normalization based on [here](http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow)
-* `common.py`: the common part for train and test, mainly is the work flow for this model
-* `train.py`: train the residual encoder model using tensorflow build-in GradientDescentOptimizer
-* `test.py`: test your own image and save the output image
+* `batchnorm.py`: batch normalization based on [this](http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow)
+* `common.py`: the common part for training and testing, mainly the work flow for this model
+* `train.py`: train the residual encoder model using Tensorflow built-in GradientDescentOptimizer
+* `test.py`: test your own images and save the output images
 
 ## Tensorflow graph
 
@@ -27,10 +25,10 @@ Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](
 
 * Use pre-trained residual encoder model
     * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/1.0)
-    * Uncompress and put all files under `model_path` which you can change in config.py
+    * Unzip all files to `model_path` (you can change this path in `config.py`)
 
-* Train yourself
-    1. Change the `learning rate`, `batch size` and `training_iters` according to your goal
+* Train your own model
+    1. Change the `learning rate`, `batch size` and `training_iters` accordingly
     2. Change `train_dir` to your directory that contains all your training jpg images
     3. Run `python train.py`
 
@@ -38,7 +36,7 @@ Used pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](
     1. Change `test_dir` to your directory that contains all your testing jpg images
     2. Run `python test.py`
 
-## Reference
+## References
 
 * [Automatic Colorization](http://tinyclouds.org/colorize/)
 * [pavelgonchar/colornet](https://github.com/pavelgonchar/colornet)
