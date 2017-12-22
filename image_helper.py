@@ -2,6 +2,9 @@
 Helper functions for image manipulation
 """
 
+from __future__ import print_function
+from __future__ import division
+
 import numpy as np
 
 from config import *
@@ -26,7 +29,7 @@ def rgb_to_yuv(rgb_image, scope):
         _v = (0.615 * _r) - (0.51499 * _g) - (0.10001 * _b)
 
         # Get image with YUV color space
-        yuv_image = tf.concat(concat_dim=3, values=[_y, _u, _v])
+        yuv_image = tf.concat(axis=3, values=[_y, _u, _v])
 
         if normalize_yuv:
             # Normalize y, u, v channels
@@ -58,9 +61,9 @@ def yuv_to_rgb(yuv_image, scope):
         _b = (_y + 2.03211 * _u) * 255
 
         # Get image with RGB color space
-        rgb_image = tf.concat(concat_dim=3, values=[_r, _g, _b])
+        rgb_image = tf.concat(axis=3, values=[_r, _g, _b])
         rgb_image = tf.maximum(rgb_image, tf.zeros(rgb_image.get_shape(), dtype=tf.float32))
-        rgb_image = tf.minimum(rgb_image, tf.mul(tf.ones(rgb_image.get_shape(), dtype=tf.float32), 255))
+        rgb_image = tf.minimum(rgb_image, tf.multiply(tf.ones(rgb_image.get_shape(), dtype=tf.float32), 255))
         rgb_image = tf.div(rgb_image, 255)
 
         return rgb_image
@@ -85,7 +88,7 @@ def normalized_yuv(yuv_images):
         channel_v = tf.add(tf.div(channel_v, 2.0), 0.5, name="channel_v")
 
         # Add channel data
-        channel_yuv = tf.concat(concat_dim=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
+        channel_yuv = tf.concat(axis=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
         return channel_yuv
 
 
@@ -102,13 +105,13 @@ def denormalized_yuv(yuv_images):
         channel_v = tf.slice(yuv_images, [0, 0, 0, 2], [-1, -1, -1, 1])
 
         # Denormalize u, v channels
-        channel_u = tf.mul(tf.sub(channel_u, 0.5), 2.0)
-        channel_v = tf.mul(tf.sub(channel_v, 0.5), 2.0)
-        channel_u = tf.mul(channel_u, u_norm_para, name="channel_u")
-        channel_v = tf.mul(channel_v, v_norm_para, name="channel_v")
+        channel_u = tf.multiply(tf.subtract(channel_u, 0.5), 2.0)
+        channel_v = tf.multiply(tf.subtract(channel_v, 0.5), 2.0)
+        channel_u = tf.multiply(channel_u, u_norm_para, name="channel_u")
+        channel_v = tf.multiply(channel_v, v_norm_para, name="channel_v")
 
         # Add channel data
-        channel_yuv = tf.concat(concat_dim=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
+        channel_yuv = tf.concat(axis=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
         return channel_yuv
 
 

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+
 import inspect
 import os
 
@@ -15,7 +18,7 @@ class Vgg16:
             path = os.path.abspath(os.path.join(path, os.pardir))
             path = os.path.join(path, "vgg16.npy")
             vgg16_npy_path = path
-            print path
+            print(path)
 
         self.data_dict = np.load(vgg16_npy_path, encoding='latin1').item()
         print("npy file loaded")
@@ -32,11 +35,11 @@ class Vgg16:
         rgb_scaled = rgb * 255.0
 
         # Convert RGB to BGR
-        red, green, blue = tf.split(3, 3, rgb_scaled)
+        red, green, blue = tf.split(value=rgb_scaled, num_or_size_splits=3, axis=3)
         assert red.get_shape().as_list()[1:] == [224, 224, 1]
         assert green.get_shape().as_list()[1:] == [224, 224, 1]
         assert blue.get_shape().as_list()[1:] == [224, 224, 1]
-        bgr = tf.concat(3, [
+        bgr = tf.concat(axis=3, values=[
             blue - VGG_MEAN[0],
             green - VGG_MEAN[1],
             red - VGG_MEAN[2],

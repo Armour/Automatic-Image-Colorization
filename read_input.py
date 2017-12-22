@@ -2,8 +2,10 @@
 Helper functions for read input
 """
 
-import os
+from __future__ import print_function
+from __future__ import division
 
+import os
 import cv2
 import imghdr
 
@@ -19,7 +21,7 @@ def init_file_path(directory):
     paths = []
 
     if not debug:
-        print "Throwing all gray space images now... this may takes some time.."
+        print("Throwing all gray space images now... this may takes some time..")
 
     for file_name in os.listdir(directory):
         # Skip files that is not jpg
