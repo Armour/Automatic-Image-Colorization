@@ -26,7 +26,7 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * Use pre-trained residual encoder model
     * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/1.0)
     * Unzip all files to `model_path` (you can change this path in `config.py`)
-    * **[UPDATE: Dec 22 2017]** Note that this model was trained under tensorflow==0.12.1, it's not really working for tensorflow 1.0+, I'll try to train a new model under tensorflow 1.4.0 and upload it soon
+    * **[UPDATE: Mar 11 2018]** Note that this model was trained under tensorflow==0.12.1, it's not really working for tensorflow 1.0+, I'll try to train a new model under tensorflow 1.4.0 and upload it soon, please see the `python3` branch for the latest version code
 
 * Train your own model
     1. Change the `learning rate`, `batch size` and `training_iters` accordingly
