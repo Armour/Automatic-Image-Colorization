@@ -8,10 +8,10 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 
 * `config.py`: config variables like learning rate, batch size and so on
 * `image_helper.py`: all functions related to image manipulation
-* `read_input.py`: input related functions
+* `read_input.py`: all functions related to input
 * `residual_encoder.py`: the residual encoder model
-* `batchnorm.py`: batch normalization based on [this](http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow)
-* `common.py`: the common part for training and testing, mainly the work flow for this model
+* `batchnorm.py`: batch normalization based on [this method](http://stackoverflow.com/questions/33949786/how-could-i-use-batch-normalization-in-tensorflow)
+* `common.py`: the common part for training and testing, which is mainly the workflow for this model
 * `train.py`: train the residual encoder model using Tensorflow built-in GradientDescentOptimizer
 * `test.py`: test your own images and save the output images
 
