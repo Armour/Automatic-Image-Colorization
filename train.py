@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 Training model
 """
@@ -64,7 +67,7 @@ if __name__ == '__main__':
                     if step % test_step == 0:
                         summary_image = concat_images(gray[0], pred[0])
                         summary_image = concat_images(summary_image, color[0])
-                        plt.imsave("%s/images/%s.jpg" % (train_summary, str(step)), summary_image)
+                        plt.imsave("%s/images/%s.png" % (train_summary, str(step)), summary_image)
 
                 # Save model
                 if step % save_step == 0 and step != 0:

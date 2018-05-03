@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 Test model
 """
@@ -72,7 +75,7 @@ if __name__ == '__main__':
                     # Save output image
                     summary_image = concat_images(gray_rgb[0], pred_rgb[0])
                     summary_image = concat_images(summary_image, color_rgb[0])
-                    plt.imsave("%s/images/%s.jpg" % (test_summary, str(step)), summary_image)
+                    plt.imsave("%s/images/%s.png" % (test_summary, str(step)), summary_image)
 
                 if step == len(file_paths):
                     break
