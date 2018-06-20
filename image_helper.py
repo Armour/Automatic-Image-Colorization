@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Helper functions for image manipulation
-"""
-
-from __future__ import print_function
-from __future__ import division
+"""Helper functions for image manipulation."""
 
 import numpy as np
+import tensorflow as tf
 
-from config import *
+from config import normalize_yuv, u_norm_para, v_norm_para
 
 
 def rgb_to_yuv(rgb_image, scope):

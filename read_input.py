@@ -1,18 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Helper functions for read input
-"""
-
-from __future__ import print_function
-from __future__ import division
+"""Helper functions for read input."""
 
 import os
 import cv2
 import imghdr
+import tensorflow as tf
 
-from config import *
+from config import debug, dequeue_buffer_size, image_size, input_resize_method
 
 
 def init_file_path(directory):
@@ -24,21 +20,33 @@ def init_file_path(directory):
     paths = []
 
     if not debug:
-        print("Throwing all gray space images now... this may takes some time..")
+        print("Throwing all gray space images now... it will take some time on first run...")
 
     for file_name in os.listdir(directory):
         # Skip files that is not jpg
         file_path = '%s/%s' % (directory, file_name)
-        if not file_name.endswith('.jpg') or imghdr.what(file_path) is not 'jpeg':
+        if imghdr.what(file_path) is not 'jpeg':
             continue
-        if debug:
-            paths.append(file_path)
-        else:
-            # Throw gray space images, this takes long time if have many images
-            # TODO: maybe can change to a fast way
-            img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
-            if len(img.shape) == 3 and img.shape[2] != 1:
-                paths.append(file_path)
+        # Delete all gray space images
+        is_gray_space = True
+        img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
+        if len(img.shape) == 3 and img.shape[2] == 3:
+            for w in range(img.shape[0]):
+                for h in range(img.shape[1]):
+                    r, g, b = img[w][h]
+                    if r != g != b:
+                        is_gray_space = False
+                    if not is_gray_space:
+                        break
+                if not is_gray_space:
+                    break
+        if is_gray_space:
+            try:
+                os.remove(file_path)
+            except OSError as e:
+                print ("Error: %s - %s." % (e.filename, e.strerror))
+            continue
+        paths.append(file_path)
     return paths
 
 
@@ -50,12 +58,12 @@ def read_image(filename_queue):
     """
     # Read the image with RGB color space
     reader = tf.WholeFileReader()
-    key, content = reader.read(filename_queue)
-    rgb_image = tf.image.decode_jpeg(content, channels=3, name="decoded_jpg")
+    _, content = reader.read(filename_queue)
+    rgb_image = tf.image.decode_jpeg(content, channels=3, name="color_image_original")
     # Resize image to the right image_size
     rgb_image = tf.image.resize_images(rgb_image, [image_size, image_size], method=input_resize_method)
-    # Make pixel element value in [0, 1)
-    rgb_image = tf.div(tf.cast(rgb_image, tf.float32), 255, name="float_image")
+    # Map all pixel element value into [0, 1]
+    rgb_image = tf.clip_by_value(tf.div(tf.cast(rgb_image, tf.float32), 255), 0, 1, name="color_image_in_0_1")
     return rgb_image
 
 
@@ -71,7 +79,13 @@ def input_pipeline(filenames, b_size, num_epochs=None, shuffle=False, test=False
     """
     filename_queue = tf.train.string_input_producer(filenames, num_epochs=num_epochs, shuffle=shuffle)
     yuv_image = read_image(filename_queue)
+    # min_after_dequeue defines how big a buffer we will randomly sample
+    #   from -- bigger means better shuffling but slower start up and more
+    #   memory used.
     min_after_dequeue = dequeue_buffer_size
+    # capacity must be larger than min_after_dequeue and the amount larger
+    #   determines the maximum we will prefetch.  Recommendation:
+    #   min_after_dequeue + (num_threads + a small safety margin) * batch_size
     capacity = min_after_dequeue + 3 * b_size
     if test:
         image_batch = tf.train.batch([yuv_image],

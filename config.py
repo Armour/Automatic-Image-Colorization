@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Config file
-"""
+"""Config file that contains all config varibles."""
 
 import tensorflow as tf
 from tensorflow.python.ops.image_ops import ResizeMethod
@@ -16,10 +14,10 @@ debug = False
 image_size = 224
 
 # Parameters for neural network
-learning_rate = 1e-4  # Learning rate
-training_iters = 24000000  # The training iterations number
-batch_size = 1  # The batch size
-display_step = 100  # Display loss for each step
+starter_learning_rate = 1e-1  # Initial learning rate
+training_iters = 1000000  # The training iterations number
+batch_size = 6  # The batch size
+display_step = 50  # Display loss for each step
 test_step = 1000  # Test and save image during training phase
 save_step = 10000  # Save our model
 dequeue_buffer_size = 1000
@@ -36,7 +34,8 @@ v_norm_para = 0.615
 
 # Directory for training and testing dataset
 train_dir = "train2014"
-test_dir = "val2014"
+test_dir = "test2014"
+val_dir = "val2014"
 
 # Summary directory for training and testing
 train_summary = "summary/train"

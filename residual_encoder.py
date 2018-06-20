@@ -8,13 +8,9 @@ See extensive documentation at
 http://tinyclouds.org/colorize/
 """
 
-from __future__ import print_function
-from __future__ import division
+import tensorflow as tf
 
-from tensorflow.contrib.layers import batch_norm
-
-from config import *
-from batchnorm import ConvolutionalBatchNormalizer
+from config import debug, weights, training_resize_method
 
 
 class ResidualEncoder(object):
@@ -24,7 +20,7 @@ class ResidualEncoder(object):
     @staticmethod
     def get_weight(scope):
         """
-        Get weight for one layer
+        Get initial weight for specific layer
         :param scope: the scope of the layer
         :return: the initial weight for this layer
         """
@@ -47,36 +43,17 @@ class ResidualEncoder(object):
         return square
 
     @staticmethod
-    def batch_normal(input_data, scope, training_flag, depth):
+    def batch_normal(input_data, scope, training_flag):
         """
-        Doing batch normalization
-        :param input_data: the input data
-        :param scope: scope
-        :param training_flag: the flag indicate if it is training
-        :param depth: depth for batch normalizer
-        :return: normalized data
-        """
-        with tf.variable_scope(scope):
-            ewma = tf.train.ExponentialMovingAverage(decay=0.9999)
-            bn = ConvolutionalBatchNormalizer(depth, 0.001, ewma, True)
-            update_assignments = bn.get_assigner()
-            x = bn.normalize(input_data, train=training_flag)
-        return x
-
-    @staticmethod
-    def batch_normal_new(input_data, scope, training_flag):
-        """
-        Doing batch normalization, this is the new version with build-in batch_norm function
+        Batch normalization with build-in batch_normalization function
         :param input_data: the input data
         :param scope: scope
         :param training_flag: the flag indicate if it is training
         :return: normalized data
         """
         return tf.cond(training_flag,
-                       lambda: batch_norm(input_data, decay=0.9999, is_training=True, center=True, scale=True,
-                                          updates_collections=None, scope=scope),
-                       lambda: batch_norm(input_data, decay=0.9999, is_training=False, center=True, scale=True,
-                                          updates_collections=None, scope=scope, reuse=True),
+                       lambda: tf.layers.batch_normalization(input_data, momentum=0.9999, training=True, name=scope),
+                       lambda: tf.layers.batch_normalization(input_data, momentum=0.9999, training=False, name=scope, reuse=True),
                        name='batch_normalization')
 
     def conv_layer(self, layer_input, scope, is_training, relu=True, bn=True):
@@ -93,7 +70,7 @@ class ResidualEncoder(object):
             weight = self.get_weight(scope)
             output = tf.nn.conv2d(layer_input, weight, strides=[1, 1, 1, 1], padding='SAME', name="conv")
             if bn:
-                output = self.batch_normal(output, training_flag=is_training, scope=scope + '_bn', depth=weight.get_shape()[3])
+                output = self.batch_normal(output, training_flag=is_training, scope=scope + '_bn')
             if relu:
                 output = tf.nn.relu(output, name="relu")
             else:
@@ -112,7 +89,7 @@ class ResidualEncoder(object):
             assert input_data.get_shape().as_list()[1:] == [224, 224, 3]
 
         # Batch norm and 1x1 convolutional layer 4
-        bn_4 = self.batch_normal(vgg.conv4_3, "bn_4", is_training, 512)
+        bn_4 = self.batch_normal(vgg.conv4_3, "bn_4", is_training)
         b_conv4 = self.conv_layer(bn_4, "b_conv4", is_training, bn=False)
 
         if debug:
@@ -121,7 +98,7 @@ class ResidualEncoder(object):
 
         # Backward upscale layer 4 and add convolutional layer 3
         b_conv4_upscale = tf.image.resize_images(b_conv4, [56, 56], method=training_resize_method)
-        bn_3 = self.batch_normal(vgg.conv3_3, "bn_3", is_training, 256)
+        bn_3 = self.batch_normal(vgg.conv3_3, "bn_3", is_training)
         b_conv3_input = tf.add(bn_3, b_conv4_upscale, name="b_conv3_input")
         b_conv3 = self.conv_layer(b_conv3_input, "b_conv3", is_training)
 
@@ -133,7 +110,7 @@ class ResidualEncoder(object):
 
         # Backward upscale layer 3 and add convolutional layer 2
         b_conv3_upscale = tf.image.resize_images(b_conv3, [112, 112], method=training_resize_method)
-        bn_2 = self.batch_normal(vgg.conv2_2, "bn_2", is_training, 128)
+        bn_2 = self.batch_normal(vgg.conv2_2, "bn_2", is_training)
         b_conv2_input = tf.add(bn_2, b_conv3_upscale, name="b_conv2_input")
         b_conv2 = self.conv_layer(b_conv2_input, "b_conv2", is_training)
 
@@ -145,7 +122,7 @@ class ResidualEncoder(object):
 
         # Backward upscale layer 2 and add convolutional layer 1
         b_conv2_upscale = tf.image.resize_images(b_conv2, [224, 224], method=training_resize_method)
-        bn_1 = self.batch_normal(vgg.conv1_2, "bn_1", is_training, 64)
+        bn_1 = self.batch_normal(vgg.conv1_2, "bn_1", is_training)
         b_conv1_input = tf.add(bn_1, b_conv2_upscale, name="b_conv1_input")
         b_conv1 = self.conv_layer(b_conv1_input, "b_conv1", is_training)
 
@@ -156,7 +133,7 @@ class ResidualEncoder(object):
             assert b_conv1.get_shape().as_list()[1:] == [224, 224, 3]
 
         # Backward upscale layer 1 and add input layer
-        bn_0 = self.batch_normal(input_data, "bn_0", is_training, 3)
+        bn_0 = self.batch_normal(input_data, "bn_0", is_training)
         b_conv0_input = tf.add(bn_0, b_conv1, name="b_conv0_input")
         b_conv0 = self.conv_layer(b_conv0_input, "b_conv0", is_training)
 

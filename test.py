@@ -1,26 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Test model
-"""
-
-from __future__ import print_function
-from __future__ import division
+"""Test model."""
 
 import sys
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from config import *
+from config import display_step, model_path, test_summary
 from common import init_model
-from image_helper import (concat_images)
+from image_helper import concat_images
 
 
 if __name__ == '__main__':
     # Init model
-    is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image_rgb, file_paths = init_model(train=False)
+    is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=False)
 
     # Saver
     print("Init model saver")
@@ -31,8 +26,8 @@ if __name__ == '__main__':
     init = tf.global_variables_initializer()
 
     # Create a session for running operations in the Graph
-    with tf.Session() as sess:
-        # Initialize the variables.
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+        # Initialize the variables
         sess.run(init)
 
         # Merge all summaries
@@ -40,7 +35,7 @@ if __name__ == '__main__':
         merged = tf.summary.merge_all()
         test_writer = tf.summary.FileWriter(test_summary)
 
-        # Start input enqueue threads.
+        # Start input enqueue threads
         print("Start input enqueue threads")
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -51,7 +46,7 @@ if __name__ == '__main__':
             saver.restore(sess, ckpt.model_checkpoint_path)
             print("Load model finished!")
         else:
-            print("Failed to restore model")
+            print("Failed to restore model.")
             exit()
 
         # Start testing
@@ -66,7 +61,7 @@ if __name__ == '__main__':
                 # Print batch loss
                 if step % display_step == 0:
                     loss, pred, pred_rgb, color_rgb, gray_rgb, summary = \
-                        sess.run([cost, predict, predict_rgb, color_image_rgb, gray_image_rgb, merged], feed_dict={is_training: False, uv: 3})
+                        sess.run([cost, predict, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False, uv: 3})
                     print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss))))
                     avg_error += float(np.mean(loss))
                     test_writer.add_summary(summary, step)
@@ -87,12 +82,11 @@ if __name__ == '__main__':
         except tf.errors.OUT_OF_RANGE as e:
             # Handle exception
             print("Done training -- epoch limit reached")
-            coord.request_stop(e)
 
         finally:
-            # When done, ask the threads to stop.
+            # When done, ask the threads to stop
             coord.request_stop()
 
-    # Wait for threads to finish.
+    # Wait for threads to finish
     coord.join(threads)
     sess.close()
