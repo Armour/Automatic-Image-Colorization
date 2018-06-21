@@ -20,33 +20,35 @@ def init_file_path(directory):
     paths = []
 
     if not debug:
-        print("Throwing all gray space images now... it will take some time on first run...")
+        print("Throwing all gray space images now... (this will take a long time if the training dataset is huge)")
 
     for file_name in os.listdir(directory):
         # Skip files that is not jpg
         file_path = '%s/%s' % (directory, file_name)
         if imghdr.what(file_path) is not 'jpeg':
             continue
-        # Delete all gray space images
-        is_gray_space = True
-        img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
-        if len(img.shape) == 3 and img.shape[2] == 3:
-            for w in range(img.shape[0]):
-                for h in range(img.shape[1]):
-                    r, g, b = img[w][h]
-                    if r != g != b:
-                        is_gray_space = False
+        if not debug:
+            # Delete all gray space images
+            is_gray_space = True
+            img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
+            if len(img.shape) == 3 and img.shape[2] == 3:
+                for w in range(img.shape[0]):
+                    for h in range(img.shape[1]):
+                        r, g, b = img[w][h]
+                        if r != g != b:
+                            is_gray_space = False
+                        if not is_gray_space:
+                            break
                     if not is_gray_space:
                         break
-                if not is_gray_space:
-                    break
-        if is_gray_space:
-            try:
-                os.remove(file_path)
-            except OSError as e:
-                print ("Error: %s - %s." % (e.filename, e.strerror))
-            continue
+            if is_gray_space:
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    print ("Error: %s - %s." % (e.filename, e.strerror))
+                continue
         paths.append(file_path)
+
     return paths
 
 
