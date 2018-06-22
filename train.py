@@ -16,7 +16,7 @@ from image_helper import concat_images
 
 if __name__ == '__main__':
     # Init model
-    is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=True)
+    is_training, global_step, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=True)
 
     # Saver
     print("Init model saver")
@@ -46,15 +46,15 @@ if __name__ == '__main__':
 
         try:
             while not coord.should_stop():
-                # Run optimizer seperately for u and v channel
-                sess.run(optimizer, feed_dict={is_training: True, uv: 1})
-                sess.run(optimizer, feed_dict={is_training: True, uv: 2})
-                step = sess.run(global_step)
+                # Update global_step
+                step = tf.train.global_step(sess, global_step)
+
+                # Run optimizer
+                sess.run(optimizer, feed_dict={is_training: True})
 
                 # Print batch loss
                 if step % display_step == 0:
-                    loss, pred, color, gray, summary = sess.run([cost, predict_rgb, color_image_rgb, gray_image, merged],
-                                                                feed_dict={is_training: False, uv: 3})
+                    loss, pred, color, gray, summary = sess.run([cost, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False})
                     print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss))))
                     train_writer.add_summary(summary, step)
                     train_writer.flush()

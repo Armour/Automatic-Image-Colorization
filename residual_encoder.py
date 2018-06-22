@@ -8,9 +8,10 @@ See extensive documentation at
 http://tinyclouds.org/colorize/
 """
 
+import cv2
 import tensorflow as tf
 
-from config import debug, weights, training_resize_method
+from config import debug, weights, training_resize_method, tf_blur_3x3, tf_blur_5x5
 
 
 class ResidualEncoder(object):
@@ -38,9 +39,15 @@ class ResidualEncoder(object):
             assert predict_val.get_shape().as_list()[1:] == [224, 224, 2]
             assert real_val.get_shape().as_list()[1:] == [224, 224, 2]
 
-        diff = tf.subtract(predict_val, real_val, name="diff")
-        square = tf.square(diff, name="square")
-        return square
+        blur_real_3x3 = tf.nn.conv2d(real_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='VALID', name="blur_real_3x3")
+        blur_predict_3x3 = tf.nn.conv2d(predict_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='VALID', name="blur_predict_3x3")
+        blur_real_5x5 = tf.nn.conv2d(real_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='VALID', name="blur_real_5x5")
+        blur_predict_5x5 = tf.nn.conv2d(predict_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='VALID', name="blur_predict_5x5")
+
+        diff_original = tf.reduce_sum(tf.abs(tf.subtract(predict_val, real_val)), name="diff_original")
+        diff_blur_3x3 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3)), name="diff_blur_3x3")
+        diff_blur_5x5 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5)), name="diff_blur_5x5")
+        return tf.reduce_mean(tf.stack([diff_original, diff_blur_3x3, diff_blur_5x5]), name="diff")
 
     @staticmethod
     def batch_normal(input_data, scope, training_flag):
@@ -52,8 +59,8 @@ class ResidualEncoder(object):
         :return: normalized data
         """
         return tf.cond(training_flag,
-                       lambda: tf.layers.batch_normalization(input_data, momentum=0.9999, training=True, name=scope),
-                       lambda: tf.layers.batch_normalization(input_data, momentum=0.9999, training=False, name=scope, reuse=True),
+                       lambda: tf.layers.batch_normalization(input_data, training=True, name=scope),
+                       lambda: tf.layers.batch_normalization(input_data, training=False, name=scope, reuse=True),
                        name='batch_normalization')
 
     def conv_layer(self, layer_input, scope, is_training, relu=True, bn=True):

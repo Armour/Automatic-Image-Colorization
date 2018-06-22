@@ -15,7 +15,7 @@ from image_helper import concat_images
 
 if __name__ == '__main__':
     # Init model
-    is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=False)
+    is_training, _, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=False)
 
     # Saver
     print("Init model saver")
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                 # Print batch loss
                 if step % display_step == 0:
                     loss, pred, pred_rgb, color_rgb, gray_rgb, summary = \
-                        sess.run([cost, predict, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False, uv: 3})
+                        sess.run([cost, predict, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False})
                     print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss))))
                     avg_error += float(np.mean(loss))
                     test_writer.add_summary(summary, step)

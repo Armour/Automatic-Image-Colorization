@@ -49,7 +49,6 @@ def init_model(train=True):
         print("Init placeholder...")
         is_training = tf.placeholder(tf.bool, name="training_flag")
         global_step = tf.Variable(0, trainable=False, name='global_step')
-        uv = tf.placeholder(tf.uint8, name='uv')
 
         # Init vgg16 model
         print("Init vgg16 model...")
@@ -79,13 +78,6 @@ def init_model(train=True):
 
         # Cost
         cost = residual_encoder.get_cost(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
-        u_channel_cost = tf.slice(cost, [0, 0, 0, 0], [-1, -1, -1, 1], name="u_channel_cost")
-        v_channel_cost = tf.slice(cost, [0, 0, 0, 1], [-1, -1, -1, 1], name="v_channel_cost")
-
-        cost = tf.case({tf.equal(uv, 1): lambda: u_channel_cost,
-                        tf.equal(uv, 2): lambda: v_channel_cost},
-                    default=lambda: (u_channel_cost + v_channel_cost) / 2,
-                    exclusive=True, name="cost")
 
         # Using different learning rate in different training steps
         learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step, 100000, 0.96, staircase=True)
@@ -94,10 +86,10 @@ def init_model(train=True):
         optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost, global_step=global_step)
 
         # Summaries
-        print("Init summaries")
+        print("Init tensorflow summaries...")
         tf.summary.histogram("cost", tf.reduce_mean(cost))
         tf.summary.image("gray_image", gray_image_three_channels, max_outputs=1)
         tf.summary.image("predict_rgb", predict_rgb, max_outputs=1)
         tf.summary.image("color_image_rgb", color_image_rgb, max_outputs=1)
 
-    return is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths
+    return is_training, global_step, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths
