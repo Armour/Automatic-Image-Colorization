@@ -65,8 +65,7 @@ def read_image(filename_queue):
     # Resize image to the right image_size
     rgb_image = tf.image.resize_images(rgb_image, [image_size, image_size], method=input_resize_method)
     # Map all pixel element value into [0, 1]
-    rgb_image = tf.clip_by_value(tf.div(tf.cast(rgb_image, tf.float32), 255), 0, 1, name="color_image_in_0_1")
-    return rgb_image
+    return tf.clip_by_value(tf.div(tf.cast(rgb_image, tf.float32), 255), 0.0, 1.0, name="color_image_in_0_1")
 
 
 def input_pipeline(filenames, b_size, num_epochs=None, shuffle=False, test=False):

@@ -76,20 +76,21 @@ def init_model(train=True):
         predict_yuv = tf.concat(axis=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
         predict_rgb = yuv_to_rgb(predict_yuv, "predict_rgb")
 
-        # Cost
-        cost = residual_encoder.get_cost(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
+        # Loss
+        loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
 
         # Using different learning rate in different training steps
         learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step, 100000, 0.96, staircase=True)
 
         # Optimizer
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost, global_step=global_step)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
 
         # Summaries
         print("Init tensorflow summaries...")
-        tf.summary.histogram("cost", tf.reduce_mean(cost))
-        tf.summary.image("gray_image", gray_image_three_channels, max_outputs=1)
-        tf.summary.image("predict_rgb", predict_rgb, max_outputs=1)
-        tf.summary.image("color_image_rgb", color_image_rgb, max_outputs=1)
+        tf.summary.histogram("loss", loss)
+        tf.summary.histogram("learning_rate", learning_rate)
+        tf.summary.image("gray_image", gray_image_three_channels, max_outputs=5)
+        tf.summary.image("color_image", color_image_rgb, max_outputs=5)
+        tf.summary.image("predict_image", predict_rgb, max_outputs=5)
 
-    return is_training, global_step, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths
+    return is_training, global_step, optimizer, loss, predict, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths

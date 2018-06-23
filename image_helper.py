@@ -6,8 +6,6 @@
 import numpy as np
 import tensorflow as tf
 
-from config import normalize_yuv, u_norm_para, v_norm_para
-
 
 def rgb_to_yuv(rgb_image, scope):
     """
@@ -17,25 +15,27 @@ def rgb_to_yuv(rgb_image, scope):
     :return: an image with YUV color space
     """
     with tf.name_scope(scope):
+        # Map to 0 ~ 255 (int)
+        rgb_image_256 = tf.cast(tf.multiply(rgb_image, 255), tf.int16)
+
         # Get r, g, b channel
-        _r = tf.slice(rgb_image, [0, 0, 0, 0], [-1, -1, -1, 1])
-        _g = tf.slice(rgb_image, [0, 0, 0, 1], [-1, -1, -1, 1])
-        _b = tf.slice(rgb_image, [0, 0, 0, 2], [-1, -1, -1, 1])
+        _r = tf.slice(rgb_image_256, [0, 0, 0, 0], [-1, -1, -1, 1])
+        _g = tf.slice(rgb_image_256, [0, 0, 0, 1], [-1, -1, -1, 1])
+        _b = tf.slice(rgb_image_256, [0, 0, 0, 2], [-1, -1, -1, 1])
 
         # Calculate y, u, v channel
-        _y = (0.299 * _r) + (0.587 * _g) + (0.114 * _b)
-        _u = (-0.14713 * _r) - (0.28886 * _g) + (0.436 * _b)
-        _v = (0.615 * _r) - (0.51499 * _g) - (0.10001 * _b)
+        # https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ms893078(v=msdn.10)
+        _y = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, 66), tf.multiply(_g, 129), tf.multiply(_b, 25)]), 128), 8), 16)
+        _u = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, -38), tf.multiply(_g, -74), tf.multiply(_b, 112)]), 128), 8), 128)
+        _v = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, 112), tf.multiply(_g, -94), tf.multiply(_b, -18)]), 128), 8), 128)
+
+        # Map y from 16 ~ 235 to 0 ~ 1, u and v from 16 ~ 240 to 0 ~ 1
+        _y = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_y, 16), tf.float32), 219), 0.0, 1.0)
+        _u = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_u, 16), tf.float32), 224), 0.0, 1.0)
+        _v = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_v, 16), tf.float32), 224), 0.0, 1.0)
 
         # Get image with YUV color space
-        yuv_image = tf.concat(axis=3, values=[_y, _u, _v])
-
-        if normalize_yuv:
-            # Normalize y, u, v channels
-            yuv_image = normalized_yuv(yuv_image)
-
-        return yuv_image
-
+        return tf.concat(axis=3, values=[_y, _u, _v])
 
 def yuv_to_rgb(yuv_image, scope):
     """
@@ -45,74 +45,27 @@ def yuv_to_rgb(yuv_image, scope):
     :return: an image with RGB color space
     """
     with tf.name_scope(scope):
-        if normalize_yuv:
-            # Denormalize y, u, v channels
-            yuv_image = denormalized_yuv(yuv_image)
-
         # Get y, u, v channel
         _y = tf.slice(yuv_image, [0, 0, 0, 0], [-1, -1, -1, 1])
         _u = tf.slice(yuv_image, [0, 0, 0, 1], [-1, -1, -1, 1])
         _v = tf.slice(yuv_image, [0, 0, 0, 2], [-1, -1, -1, 1])
 
+        # Map y from 0 ~ 1 to 16 ~ 235, u and v from 0 ~ 1 to 16 ~ 240
+        _y = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_y, 219), 16), tf.int16), 16, 235)
+        _u = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_u, 224), 16), tf.int16), 16, 240)
+        _v = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_v, 224), 16), tf.int16), 16, 240)
+
         # Calculate r, g, b channel
-        _r = (_y + 1.13983 * _v) * 255
-        _g = (_y - 0.39464 * _u - 0.58060 * _v) * 255
-        _b = (_y + 2.03211 * _u) * 255
+        # https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ms893078(v=msdn.10)
+        _c = tf.subtract(_y, 16)
+        _d = tf.subtract(_u, 128)
+        _e = tf.subtract(_v, 128)
+        _r = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_e, 409)]), 128), 8)
+        _g = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_d, -100), tf.multiply(_e, -208)]), 128), 8)
+        _b = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_d, 516)]), 128), 8)
 
         # Get image with RGB color space
-        rgb_image = tf.concat(axis=3, values=[_r, _g, _b])
-        rgb_image = tf.maximum(rgb_image, tf.zeros(rgb_image.get_shape(), dtype=tf.float32))
-        rgb_image = tf.minimum(rgb_image, tf.multiply(tf.ones(rgb_image.get_shape(), dtype=tf.float32), 255))
-        rgb_image = tf.div(rgb_image, 255)
-
-        return rgb_image
-
-
-def normalized_yuv(yuv_images):
-    """
-    Normalize the yuv image data
-    :param yuv_images: the YUV images that needs normalization
-    :return: the normalized yuv image
-    """
-    with tf.name_scope("normalize_yuv"):
-        # Split channels
-        channel_y = tf.slice(yuv_images, [0, 0, 0, 0], [-1, -1, -1, 1])
-        channel_u = tf.slice(yuv_images, [0, 0, 0, 1], [-1, -1, -1, 1])
-        channel_v = tf.slice(yuv_images, [0, 0, 0, 2], [-1, -1, -1, 1])
-
-        # Normalize u, v channels
-        channel_u = tf.div(channel_u, u_norm_para)
-        channel_v = tf.div(channel_v, v_norm_para)
-        channel_u = tf.add(tf.div(channel_u, 2.0), 0.5, name="channel_u")
-        channel_v = tf.add(tf.div(channel_v, 2.0), 0.5, name="channel_v")
-
-        # Add channel data
-        channel_yuv = tf.concat(axis=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
-        return channel_yuv
-
-
-def denormalized_yuv(yuv_images):
-    """
-    Denormalize the yuv image data
-    :param yuv_images: the YUV images that needs denormalization
-    :return: the denormalized yuv image
-    """
-    with tf.name_scope("denormalize_yuv"):
-        # Split channels
-        channel_y = tf.slice(yuv_images, [0, 0, 0, 0], [-1, -1, -1, 1])
-        channel_u = tf.slice(yuv_images, [0, 0, 0, 1], [-1, -1, -1, 1])
-        channel_v = tf.slice(yuv_images, [0, 0, 0, 2], [-1, -1, -1, 1])
-
-        # Denormalize u, v channels
-        channel_u = tf.multiply(tf.subtract(channel_u, 0.5), 2.0)
-        channel_v = tf.multiply(tf.subtract(channel_v, 0.5), 2.0)
-        channel_u = tf.multiply(channel_u, u_norm_para, name="channel_u")
-        channel_v = tf.multiply(channel_v, v_norm_para, name="channel_v")
-
-        # Add channel data
-        channel_yuv = tf.concat(axis=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
-        return channel_yuv
-
+        return tf.clip_by_value(tf.div(tf.cast(tf.concat(axis=3, values=[_r, _g, _b]), tf.float32), 256), 0.0, 1.0)
 
 def concat_images(img_a, img_b):
     """

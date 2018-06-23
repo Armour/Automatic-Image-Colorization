@@ -11,7 +11,7 @@ http://tinyclouds.org/colorize/
 import cv2
 import tensorflow as tf
 
-from config import debug, weights, training_resize_method, tf_blur_3x3, tf_blur_5x5
+from config import batch_size, debug, weights, training_resize_method, tf_blur_3x3, tf_blur_5x5
 
 
 class ResidualEncoder(object):
@@ -28,9 +28,9 @@ class ResidualEncoder(object):
         return weights[scope]
 
     @staticmethod
-    def get_cost(predict_val, real_val):
+    def get_loss(predict_val, real_val):
         """
-        Cost function
+        Loss function
         :param predict_val: the predict value
         :param real_val: the real value
         :return: cost
@@ -39,15 +39,15 @@ class ResidualEncoder(object):
             assert predict_val.get_shape().as_list()[1:] == [224, 224, 2]
             assert real_val.get_shape().as_list()[1:] == [224, 224, 2]
 
-        blur_real_3x3 = tf.nn.conv2d(real_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='VALID', name="blur_real_3x3")
-        blur_predict_3x3 = tf.nn.conv2d(predict_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='VALID', name="blur_predict_3x3")
-        blur_real_5x5 = tf.nn.conv2d(real_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='VALID', name="blur_real_5x5")
-        blur_predict_5x5 = tf.nn.conv2d(predict_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='VALID', name="blur_predict_5x5")
+        blur_real_3x3 = tf.nn.conv2d(real_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_real_3x3")
+        blur_real_5x5 = tf.nn.conv2d(real_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_real_5x5")
+        blur_predict_3x3 = tf.nn.conv2d(predict_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_3x3")
+        blur_predict_5x5 = tf.nn.conv2d(predict_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_5x5")
 
         diff_original = tf.reduce_sum(tf.abs(tf.subtract(predict_val, real_val)), name="diff_original")
         diff_blur_3x3 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3)), name="diff_blur_3x3")
         diff_blur_5x5 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5)), name="diff_blur_5x5")
-        return tf.reduce_mean(tf.stack([diff_original, diff_blur_3x3, diff_blur_5x5]), name="diff")
+        return tf.div(tf.reduce_mean([diff_original, diff_blur_3x3, diff_blur_5x5]), batch_size, name="diff")
 
     @staticmethod
     def batch_normal(input_data, scope, training_flag):

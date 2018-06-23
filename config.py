@@ -27,12 +27,6 @@ dequeue_buffer_size = 1000
 input_resize_method = ResizeMethod.BILINEAR
 training_resize_method = ResizeMethod.BILINEAR
 
-# YUV normalization parameters
-normalize_yuv = True
-y_norm_para = 0.5
-u_norm_para = 0.436
-v_norm_para = 0.615
-
 # Directory for training and testing dataset
 train_dir = "train2014"
 test_dir = "test2014"
@@ -66,9 +60,9 @@ gaussin_blur_3x3 = np.stack((gaussin_blur_3x3, gaussin_blur_3x3), axis=-1) # (3,
 
 gaussin_blur_5x5 = np.divide([
     [1,  4,  7,  4, 1],
-    [4, 16, 26, 16, 2],
+    [4, 16, 26, 16, 4],
     [7, 26, 41, 26, 7],
-    [4, 16, 26, 16, 2],
+    [4, 16, 26, 16, 4],
     [1,  4,  7,  4, 1],
 ], 273) # (5, 5)
 gaussin_blur_5x5 = np.stack((gaussin_blur_5x5, gaussin_blur_5x5), axis=-1) # (5, 5, 2)
