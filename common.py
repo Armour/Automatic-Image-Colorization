@@ -8,7 +8,7 @@ import os
 import tensorflow as tf
 from vgg import vgg16
 
-from config import train_dir, test_dir, batch_size, starter_learning_rate
+from config import batch_size, train_dir, test_dir, batch_size, starter_learning_rate
 from image_helper import rgb_to_yuv, yuv_to_rgb
 from read_input import init_file_path, input_pipeline
 from residual_encoder import ResidualEncoder
@@ -87,7 +87,7 @@ def init_model(train=True):
 
         # Summaries
         print("Init tensorflow summaries...")
-        tf.summary.histogram("loss", loss)
+        tf.summary.histogram("loss", tf.div(tf.reduce_mean(loss), batch_size))
         tf.summary.histogram("learning_rate", learning_rate)
         tf.summary.image("gray_image", gray_image_three_channels, max_outputs=5)
         tf.summary.image("color_image", color_image_rgb, max_outputs=5)

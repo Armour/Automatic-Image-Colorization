@@ -47,7 +47,7 @@ class ResidualEncoder(object):
         diff_original = tf.reduce_sum(tf.abs(tf.subtract(predict_val, real_val)), name="diff_original")
         diff_blur_3x3 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3)), name="diff_blur_3x3")
         diff_blur_5x5 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5)), name="diff_blur_5x5")
-        return tf.div(tf.reduce_mean([diff_original, diff_blur_3x3, diff_blur_5x5]), batch_size, name="diff")
+        return tf.div(tf.add_n([diff_original, diff_blur_3x3, diff_blur_5x5]), 3)
 
     @staticmethod
     def batch_normal(input_data, scope, training_flag):

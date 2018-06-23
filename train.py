@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
 
-from config import display_step, model_path, save_step, test_step, training_iters, train_summary
+from config import batch_size, display_step, model_path, save_step, test_step, training_iters, train_summary
 from common import init_model
 from image_helper import concat_images
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 # Print batch loss
                 if step % display_step == 0:
                     loss, pred, color, gray, summary = sess.run([cost, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False})
-                    print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss))))
+                    print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss) / batch_size)))
                     train_writer.add_summary(summary, step)
                     train_writer.flush()
 

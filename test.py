@@ -8,7 +8,7 @@ import sys
 import numpy as np
 from matplotlib import pyplot as plt
 
-from config import display_step, model_path, test_summary
+from config import batch_size, display_step, model_path, test_summary
 from common import init_model
 from image_helper import concat_images
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
         try:
             step = 0
-            avg_error = 0
+            avg_loss = 0
             while not coord.should_stop():
                 step += 1
 
@@ -62,8 +62,8 @@ if __name__ == '__main__':
                 if step % display_step == 0:
                     loss, pred, pred_rgb, color_rgb, gray_rgb, summary = \
                         sess.run([cost, predict, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False})
-                    print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss))))
-                    avg_error += float(np.mean(loss))
+                    print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss) / batch_size)))
+                    avg_loss += float(np.mean(loss)) / batch_size
                     test_writer.add_summary(summary, step)
                     test_writer.flush()
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
                     break
 
             print("Testing Finished!")
-            print("Average error: %f" % (avg_error / len(file_paths)))
+            print("Average loss: %f" % (avg_loss / len(file_paths)))
             sys.stdout.flush()
 
         except tf.errors.OUT_OF_RANGE as e:
