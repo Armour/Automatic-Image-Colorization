@@ -79,7 +79,7 @@ def input_pipeline(filenames, b_size, num_epochs=None, shuffle=False, test=False
     :return: a batch of yuv_images
     """
     filename_queue = tf.train.string_input_producer(filenames, num_epochs=num_epochs, shuffle=shuffle)
-    yuv_image = read_image(filename_queue)
+    rgb_image = read_image(filename_queue)
     # min_after_dequeue defines how big a buffer we will randomly sample
     #   from -- bigger means better shuffling but slower start up and more
     #   memory used.
@@ -89,11 +89,11 @@ def input_pipeline(filenames, b_size, num_epochs=None, shuffle=False, test=False
     #   min_after_dequeue + (num_threads + a small safety margin) * batch_size
     capacity = min_after_dequeue + 3 * b_size
     if test:
-        image_batch = tf.train.batch([yuv_image],
+        image_batch = tf.train.batch([rgb_image],
                                      batch_size=b_size,
                                      capacity=capacity)
     else:
-        image_batch = tf.train.shuffle_batch([yuv_image],
+        image_batch = tf.train.shuffle_batch([rgb_image],
                                              batch_size=b_size,
                                              capacity=capacity,
                                              min_after_dequeue=min_after_dequeue)

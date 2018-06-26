@@ -15,9 +15,6 @@ from config import batch_size, debug, weights, training_resize_method, tf_blur_3
 
 
 class ResidualEncoder(object):
-    def __init__(self):
-        pass
-
     @staticmethod
     def get_weight(scope):
         """
@@ -44,9 +41,9 @@ class ResidualEncoder(object):
         blur_predict_3x3 = tf.nn.conv2d(predict_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_3x3")
         blur_predict_5x5 = tf.nn.conv2d(predict_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_5x5")
 
-        diff_original = tf.reduce_sum(tf.abs(tf.subtract(predict_val, real_val)), name="diff_original")
-        diff_blur_3x3 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3)), name="diff_blur_3x3")
-        diff_blur_5x5 = tf.reduce_sum(tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5)), name="diff_blur_5x5")
+        diff_original = tf.abs(tf.subtract(predict_val, real_val), name="diff_original")
+        diff_blur_3x3 = tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3), name="diff_blur_3x3")
+        diff_blur_5x5 = tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5), name="diff_blur_5x5")
         return tf.div(tf.add_n([diff_original, diff_blur_3x3, diff_blur_5x5]), 3)
 
     @staticmethod
@@ -58,10 +55,7 @@ class ResidualEncoder(object):
         :param training_flag: the flag indicate if it is training
         :return: normalized data
         """
-        return tf.cond(training_flag,
-                       lambda: tf.layers.batch_normalization(input_data, training=True, name=scope),
-                       lambda: tf.layers.batch_normalization(input_data, training=False, name=scope, reuse=True),
-                       name='batch_normalization')
+        return tf.layers.batch_normalization(input_data, training=training_flag, name=scope)
 
     def conv_layer(self, layer_input, scope, is_training, relu=True, bn=True):
         """
