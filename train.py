@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
             if step % display_step == 0:
                 # Print batch loss.
-                print("📖 Iter %d, Minibatch Loss = %f" % (step, float(np.mean(l))))
+                print("📖 Iter %d, Minibatch Loss = %f" % (step, l))
 
                 # Save testing image.
                 if step % testing_step == 0:

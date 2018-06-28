@@ -96,10 +96,14 @@ def init_model(train=True):
 
         # Init tensorflow summaries.
         print("⏳ Init tensorflow summaries...")
-        tf.summary.histogram("loss", tf.reduce_mean(loss))
+        tf.summary.histogram("loss", loss)
         tf.summary.histogram("learning_rate", learning_rate)
-        tf.summary.image("gray_image", gray_image_three_channels, max_outputs=5)
-        tf.summary.image("color_image", color_image_rgb, max_outputs=5)
-        tf.summary.image("predict_image", predict_rgb, max_outputs=5)
+        tf.summary.image("color_image_rgb", color_image_rgb, max_outputs=3)
+        tf.summary.image("color_image_yuv", color_image_yuv, max_outputs=3)
+        tf.summary.image("gray_image_one_channel", gray_image_one_channel, max_outputs=3)
+        tf.summary.image("gray_image_three_channels", gray_image_three_channels, max_outputs=3)
+        tf.summary.image("gray_image_yuv", gray_image_yuv, max_outputs=3)
+        tf.summary.image("predict_yuv", predict_yuv, max_outputs=3)
+        tf.summary.image("predict_rgb", predict_rgb, max_outputs=3)
 
     return is_training, global_step, optimizer, loss, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths

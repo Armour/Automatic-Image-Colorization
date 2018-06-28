@@ -41,10 +41,10 @@ class ResidualEncoder(object):
         blur_predict_3x3 = tf.nn.conv2d(predict_val, tf_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_3x3")
         blur_predict_5x5 = tf.nn.conv2d(predict_val, tf_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_5x5")
 
-        diff_original = tf.abs(tf.subtract(predict_val, real_val), name="diff_original")
-        diff_blur_3x3 = tf.abs(tf.subtract(blur_predict_3x3, blur_real_3x3), name="diff_blur_3x3")
-        diff_blur_5x5 = tf.abs(tf.subtract(blur_predict_5x5, blur_real_5x5), name="diff_blur_5x5")
-        return tf.div(tf.add_n([diff_original, diff_blur_3x3, diff_blur_5x5]), 3.)
+        diff_original = tf.reduce_sum(tf.squared_difference(predict_val, real_val), name="diff_original")
+        diff_blur_3x3 = tf.reduce_sum(tf.squared_difference(blur_predict_3x3, blur_real_3x3), name="diff_blur_3x3")
+        diff_blur_5x5 = tf.reduce_sum(tf.squared_difference(blur_predict_5x5, blur_real_5x5), name="diff_blur_5x5")
+        return (diff_original + diff_blur_3x3 + diff_blur_5x5) / 3
 
     @staticmethod
     def batch_normal(input_data, scope, is_training):
