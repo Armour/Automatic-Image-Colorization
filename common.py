@@ -1,19 +1,22 @@
-"""
-The common structure for training and testing
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""The utility functions for training and testing."""
 
 import os
 
-from config import *
-from image_helper import (rgb_to_yuv, yuv_to_rgb)
-from read_input import (init_file_path, input_pipeline)
-from residual_encoder import ResidualEncoder
+import tensorflow as tf
 from vgg import vgg16
+
+from config import batch_size, testing_dir, training_dir
+from image_helper import rgb_to_yuv, yuv_to_rgb
+from read_input import init_file_path, get_dataset_iterator
+from residual_encoder import ResidualEncoder
 
 
 def create_folder(folder_path):
     """
-    Create folder if not exist
+    Create folder if not exist.
     :param folder_path:
     :return: None
     """
@@ -23,78 +26,76 @@ def create_folder(folder_path):
 
 def init_model(train=True):
     """
-    Init model for both training and testing
+    Init model for both training and testing.
     :param train: indicate if current is in training
     :return: all stuffs that need for this model
     """
-    # Create training summary folder if not exist
+    # Create training summary folder if not exist.
     create_folder("summary/train/images")
 
-    # Create testing summary folder if not exist
+    # Create testing summary folder if not exist.
     create_folder("summary/test/images")
 
-    # Init image data file path
-    print "Init file path"
-    if train:
-        file_paths = init_file_path(train_dir)
-    else:
-        file_paths = init_file_path(test_dir)
+    # Use gpu if exist.
+    with tf.device('/device:GPU:0'):
+        # Init image data file path.
+        print("⏳ Init input file path...")
+        if train:
+            file_paths = init_file_path(training_dir)
+        else:
+            file_paths = init_file_path(testing_dir)
 
-    # Init placeholder and global step
-    print "Init placeholder"
-    is_training = tf.placeholder(tf.bool, name="training_flag")
-    global_step = tf.Variable(0, name='global_step', trainable=False)
-    uv = tf.placeholder(tf.uint8, name='uv')
+        # Init training flag and global step.
+        print("⏳ Init placeholder and variables...")
+        is_training = tf.placeholder(tf.bool, name="is_training")
+        global_step = tf.train.get_or_create_global_step()
 
-    # Init vgg16 model
-    print "Init vgg16 model"
-    vgg = vgg16.Vgg16()
+        # Load vgg16 model.
+        print("🤖 Load vgg16 model...")
+        vgg = vgg16.Vgg16()
 
-    # Init residual encoder model
-    print "Init residual encoder model"
-    residual_encoder = ResidualEncoder()
+        # Build residual encoder model.
+        print("🤖 Build residual encoder model...")
+        residual_encoder = ResidualEncoder()
 
-    # Color image
-    color_image_rgb = input_pipeline(file_paths, batch_size, test=not train)
-    color_image_yuv = rgb_to_yuv(color_image_rgb, "rgb2yuv_for_color_image")
+        # Get dataset iterator.
+        iterator = get_dataset_iterator(file_paths, batch_size, shuffle=True)
 
-    # Gray image
-    gray_image = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image")
-    gray_image_rgb = tf.image.grayscale_to_rgb(gray_image, name="gray_image_rgb")
-    gray_image_yuv = rgb_to_yuv(gray_image_rgb, "rgb2yuv_for_gray_image")
-    gray_image = tf.concat(concat_dim=3, values=[gray_image, gray_image, gray_image], name="gray_image_input")
+        with tf.name_scope("input_image"):
+            # Get color image.
+            color_image_rgb = iterator.get_next()
+            color_image_yuv = rgb_to_yuv(color_image_rgb, "color_image_yuv")
 
-    # Build vgg model
-    with tf.name_scope("content_vgg"):
-        vgg.build(gray_image)
+            # Get gray image.
+            gray_image_one_channel = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image_one_channel")
+            gray_image_three_channels = tf.image.grayscale_to_rgb(gray_image_one_channel, name="gray_image_three_channels")
+            gray_image_yuv = rgb_to_yuv(gray_image_three_channels, "gray_image_yuv")
 
-    # Predict model
-    predict = residual_encoder.build(input_data=gray_image, vgg=vgg, is_training=is_training)
-    predict_yuv = tf.concat(concat_dim=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
-    predict_rgb = yuv_to_rgb(predict_yuv, "yuv2rgb_for_pred_image")
+        # Build vgg model.
+        with tf.name_scope("content_vgg"):
+            vgg.build(gray_image_three_channels)
 
-    # Cost
-    cost = residual_encoder.get_cost(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
+        # Predict model.
+        with tf.name_scope("predict"):
+            predict = residual_encoder.build(input_data=gray_image_three_channels, vgg=vgg, is_training=is_training)
+            predict_yuv = tf.concat(axis=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
+            predict_rgb = yuv_to_rgb(predict_yuv, "predict_rgb")
 
-    u_channel_cost = tf.slice(cost, [0, 0, 0, 0], [-1, -1, -1, 1], name="u_channel_cost")
-    v_channel_cost = tf.slice(cost, [0, 0, 0, 1], [-1, -1, -1, 1], name="v_channel_cost")
+        # Get loss.
+        with tf.name_scope("loss"):
+            loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
 
-    cost = tf.case({tf.equal(uv, 1): lambda: u_channel_cost,
-                    tf.equal(uv, 2): lambda: v_channel_cost},
-                   default=lambda: (u_channel_cost + v_channel_cost) / 2,
-                   exclusive=True, name="cost")
+        # Prepare optimizer.
+        with tf.name_scope("optimizer"):
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                optimizer = tf.train.AdamOptimizer().minimize(loss, global_step=global_step)
 
-    # Using different learning rate in different training steps
-    # lr = tf.div(learning_rate, tf.cast(tf.pow(2, tf.div(global_step, 160000)), tf.float32), name="learning_rate")
+        # Init tensorflow summaries.
+        print("⏳ Init tensorflow summaries...")
+        tf.summary.histogram("loss", loss)
+        tf.summary.image("gray_image", gray_image_three_channels, max_outputs=5)
+        tf.summary.image("predict_image", predict_rgb, max_outputs=5)
+        tf.summary.image("color_image", color_image_rgb, max_outputs=5)
 
-    # Optimizer
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost, global_step=global_step)
-
-    # Summaries
-    print "Init summaries"
-    tf.histogram_summary("cost", tf.reduce_mean(cost))
-    tf.image_summary("color_image_rgb", color_image_rgb, max_images=1)
-    tf.image_summary("predict_rgb", predict_rgb, max_images=1)
-    tf.image_summary("gray_image", gray_image_rgb, max_images=1)
-
-    return is_training, global_step, uv, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image_rgb, file_paths
+    return is_training, global_step, optimizer, loss, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths

@@ -1,116 +1,64 @@
-"""
-Helper functions for image manipulation
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Helper functions for image manipulation."""
 
 import numpy as np
-
-from config import *
+import tensorflow as tf
+from config import u_norm_para, v_norm_para
 
 
 def rgb_to_yuv(rgb_image, scope):
     """
-    Convert image color space from RGB to YUV
+    Convert image color space from RGB to YUV.
     :param rgb_image: an image with RGB color space
     :param scope: scope for this function
     :return: an image with YUV color space
     """
     with tf.name_scope(scope):
-        # Get r, g, b channel
+        # Get r, g, b channel.
         _r = tf.slice(rgb_image, [0, 0, 0, 0], [-1, -1, -1, 1])
         _g = tf.slice(rgb_image, [0, 0, 0, 1], [-1, -1, -1, 1])
         _b = tf.slice(rgb_image, [0, 0, 0, 2], [-1, -1, -1, 1])
 
-        # Calculate y, u, v channel
-        _y = (0.299 * _r) + (0.587 * _g) + (0.114 * _b)
-        _u = (-0.14713 * _r) - (0.28886 * _g) + (0.436 * _b)
-        _v = (0.615 * _r) - (0.51499 * _g) - (0.10001 * _b)
+        # Calculate y, u, v channel.
+        # https://www.pcmag.com/encyclopedia/term/55166/yuv-rgb-conversion-formulas
+        _y = 0.299 * _r + 0.587 * _g + 0.114 * _b
+        _u = 0.492 * (_b - _y)
+        _v = 0.877 * (_r - _y)
 
-        # Get image with YUV color space
-        yuv_image = tf.concat(concat_dim=3, values=[_y, _u, _v])
+        # Normalize u, v channel.
+        _u = _u / (u_norm_para * 2) + 0.5
+        _v = _v / (v_norm_para * 2) + 0.5
 
-        if normalize_yuv:
-            # Normalize y, u, v channels
-            yuv_image = normalized_yuv(yuv_image)
-
-        return yuv_image
-
+        # Get image with YUV color space.
+        return tf.clip_by_value(tf.concat(axis=3, values=[_y, _u, _v]), 0.0, 1.0)
 
 def yuv_to_rgb(yuv_image, scope):
     """
-    Convert image color space from YUV to RGB
+    Convert image color space from YUV to RGB.
     :param yuv_image: an image with YUV color space
     :param scope: scope for this function
     :return: an image with RGB color space
     """
     with tf.name_scope(scope):
-        if normalize_yuv:
-            # Denormalize y, u, v channels
-            yuv_image = denormalized_yuv(yuv_image)
-
-        # Get y, u, v channel
+        # Get y, u, v channel.
         _y = tf.slice(yuv_image, [0, 0, 0, 0], [-1, -1, -1, 1])
         _u = tf.slice(yuv_image, [0, 0, 0, 1], [-1, -1, -1, 1])
         _v = tf.slice(yuv_image, [0, 0, 0, 2], [-1, -1, -1, 1])
 
-        # Calculate r, g, b channel
-        _r = (_y + 1.13983 * _v) * 255
-        _g = (_y - 0.39464 * _u - 0.58060 * _v) * 255
-        _b = (_y + 2.03211 * _u) * 255
+        # Denormalize u, v channel.
+        _u = (_u - 0.5) * u_norm_para * 2
+        _v = (_v - 0.5) * v_norm_para * 2
 
-        # Get image with RGB color space
-        rgb_image = tf.concat(concat_dim=3, values=[_r, _g, _b])
-        rgb_image = tf.maximum(rgb_image, tf.zeros(rgb_image.get_shape(), dtype=tf.float32))
-        rgb_image = tf.minimum(rgb_image, tf.mul(tf.ones(rgb_image.get_shape(), dtype=tf.float32), 255))
-        rgb_image = tf.div(rgb_image, 255)
+        # Calculate r, g, b channel.
+        # https://www.pcmag.com/encyclopedia/term/55166/yuv-rgb-conversion-formulas
+        _r = _y + 1.14 * _v
+        _g = _y - 0.395 * _u - 0.581 * _v
+        _b = _y + 2.033 * _u
 
-        return rgb_image
-
-
-def normalized_yuv(yuv_images):
-    """
-    Normalize the yuv image data
-    :param yuv_images: the YUV images that needs normalization
-    :return: the normalized yuv image
-    """
-    with tf.name_scope("normalize_yuv"):
-        # Split channels
-        channel_y = tf.slice(yuv_images, [0, 0, 0, 0], [-1, -1, -1, 1])
-        channel_u = tf.slice(yuv_images, [0, 0, 0, 1], [-1, -1, -1, 1])
-        channel_v = tf.slice(yuv_images, [0, 0, 0, 2], [-1, -1, -1, 1])
-
-        # Normalize u, v channels
-        channel_u = tf.div(channel_u, u_norm_para)
-        channel_v = tf.div(channel_v, v_norm_para)
-        channel_u = tf.add(tf.div(channel_u, 2.0), 0.5, name="channel_u")
-        channel_v = tf.add(tf.div(channel_v, 2.0), 0.5, name="channel_v")
-
-        # Add channel data
-        channel_yuv = tf.concat(concat_dim=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
-        return channel_yuv
-
-
-def denormalized_yuv(yuv_images):
-    """
-    Denormalize the yuv image data
-    :param yuv_images: the YUV images that needs denormalization
-    :return: the denormalized yuv image
-    """
-    with tf.name_scope("denormalize_yuv"):
-        # Split channels
-        channel_y = tf.slice(yuv_images, [0, 0, 0, 0], [-1, -1, -1, 1])
-        channel_u = tf.slice(yuv_images, [0, 0, 0, 1], [-1, -1, -1, 1])
-        channel_v = tf.slice(yuv_images, [0, 0, 0, 2], [-1, -1, -1, 1])
-
-        # Denormalize u, v channels
-        channel_u = tf.mul(tf.sub(channel_u, 0.5), 2.0)
-        channel_v = tf.mul(tf.sub(channel_v, 0.5), 2.0)
-        channel_u = tf.mul(channel_u, u_norm_para, name="channel_u")
-        channel_v = tf.mul(channel_v, v_norm_para, name="channel_v")
-
-        # Add channel data
-        channel_yuv = tf.concat(concat_dim=3, values=[channel_y, channel_u, channel_v], name="channel_yuv")
-        return channel_yuv
-
+        # Get image with RGB color space.
+        return tf.clip_by_value(tf.concat(axis=3, values=[_r, _g, _b]), 0.0, 1.0)
 
 def concat_images(img_a, img_b):
     """

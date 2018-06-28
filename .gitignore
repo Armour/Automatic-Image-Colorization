@@ -1,7 +1,9 @@
-# IntelliJ project files
 .idea
+.vscode
 *.pyc
-vgg/vgg16.npy
+__pycache__
+vgg16.npy
 summary/
 train2014/
+test2014/
 val2014/
