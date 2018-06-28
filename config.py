@@ -17,9 +17,8 @@ image_size = 224
 image_resize_method = tf.image.ResizeMethod.BILINEAR
 
 # Parameters for neural network.
-starter_learning_rate = 1e-4  # Initial learning rate.
-training_iters = 1000000  # The training iterations number.
-batch_size = 6
+training_iters = 2000000  # The training iterations number.
+batch_size = 6 # Batch size for training data.
 display_step = 50  # Step interval for displaying loss and saving summary during training phase.
 testing_step = 1000  # Step interval for testing and saving image during training phase.
 saving_step = 10000  # Step interval for saving model during training phase.
@@ -32,7 +31,6 @@ v_norm_para = 0.614777
 # Directory for training and testing dataset.
 training_dir = "train2014"
 testing_dir = "test2014"
-validation_dir = "val2014"
 
 # Model, result and generated images stored path.
 summary_path = "summary"

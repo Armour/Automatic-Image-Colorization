@@ -8,7 +8,7 @@ import os
 import tensorflow as tf
 from vgg import vgg16
 
-from config import batch_size, testing_dir, training_dir, starter_learning_rate
+from config import batch_size, testing_dir, training_dir
 from image_helper import rgb_to_yuv, yuv_to_rgb
 from read_input import init_file_path, get_dataset_iterator
 from residual_encoder import ResidualEncoder
@@ -85,25 +85,17 @@ def init_model(train=True):
         with tf.name_scope("loss"):
             loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
 
+        # Prepare optimizer.
         with tf.name_scope("optimizer"):
-            # Use different learning rate in different training steps.
-            learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step, 100000, 0.96, staircase=True)
-
-            # Prepare optimizer.
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
+                optimizer = tf.train.AdamOptimizer().minimize(loss, global_step=global_step)
 
         # Init tensorflow summaries.
         print("⏳ Init tensorflow summaries...")
         tf.summary.histogram("loss", loss)
-        tf.summary.histogram("learning_rate", learning_rate)
-        tf.summary.image("color_image_rgb", color_image_rgb, max_outputs=3)
-        tf.summary.image("color_image_yuv", color_image_yuv, max_outputs=3)
-        tf.summary.image("gray_image_one_channel", gray_image_one_channel, max_outputs=3)
-        tf.summary.image("gray_image_three_channels", gray_image_three_channels, max_outputs=3)
-        tf.summary.image("gray_image_yuv", gray_image_yuv, max_outputs=3)
-        tf.summary.image("predict_yuv", predict_yuv, max_outputs=3)
-        tf.summary.image("predict_rgb", predict_rgb, max_outputs=3)
+        tf.summary.image("gray_image", gray_image_three_channels, max_outputs=5)
+        tf.summary.image("predict_image", predict_rgb, max_outputs=5)
+        tf.summary.image("color_image", color_image_rgb, max_outputs=5)
 
     return is_training, global_step, optimizer, loss, predict_rgb, color_image_rgb, gray_image_three_channels, file_paths

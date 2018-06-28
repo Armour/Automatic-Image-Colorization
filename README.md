@@ -6,7 +6,7 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 
 ## Structure
 
-* `config.py`: config variables like learning rate, batch size and so on
+* `config.py`: config variables like batch size, training_iters and so on
 * `image_helper.py`: all functions related to image manipulation
 * `read_input.py`: all functions related to input
 * `residual_encoder.py`: the residual encoder model
@@ -23,22 +23,23 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
 
 * Use pre-trained residual encoder model
-  * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/1.0)
-  * Unzip all files to `model_path` (you can change this path in `config.py`)
+  * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/2.0)
+  * Unzip all files to `summary_path` (you can change this path in `config.py`)
 
 * Train your own model
-  1. Change the `starter_learning_rate`, `batch_size` and `training_iters` accordingly
-  2. Change `train_dir` to your directory that contains all your training jpg images
+  1. Change the `batch_size` and `training_iters` if you want.
+  2. Change `training_dir` to your directory that contains all your training jpg images
   3. Run `python train.py`
 
 * Test
-  1. Change `test_dir` to your directory that contains all your testing jpg images
+  1. Change `testing_dir` to your directory that contains all your testing jpg images
   2. Run `python test.py`
 
 ## References
 
 * [Automatic Colorization](http://tinyclouds.org/colorize/)
 * [pavelgonchar/colornet](https://github.com/pavelgonchar/colornet)
+* [raghavgupta0296/ColourNet](https://github.com/raghavgupta0296/ColourNet)
 * [pretrained VGG16 npy file](https://github.com/machrisaa/tensorflow-vgg)
 
 ## License
