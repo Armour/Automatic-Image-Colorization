@@ -3,88 +3,44 @@
 
 """Train model."""
 
-import sys
-
 import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
 
-from config import batch_size, display_step, model_path, save_step, test_step, training_iters, train_summary
+from config import display_step, summary_path, saving_step, testing_step, training_iters, training_summary
 from common import init_model
 from image_helper import concat_images
 
 
 if __name__ == '__main__':
-    # Init model
-    is_training, global_step, optimizer, cost, predict, predict_rgb, color_image_rgb, gray_image, file_paths = init_model(train=True)
+    # Init model.
+    is_training, global_step, optimizer, loss, predict_rgb, color_image_rgb, gray_image, _ = init_model(train=True)
 
-    # Saver
-    print("Init model saver")
-    saver = tf.train.Saver()
+    # Init scaffold and hooks.
+    scaffold = tf.train.Scaffold()
+    summary_hook = tf.train.SummarySaverHook(output_dir=training_summary, save_steps=display_step, scaffold=scaffold)
+    checkpoint_hook = tf.train.CheckpointSaverHook(checkpoint_dir=summary_path, save_steps=saving_step, scaffold=scaffold)
+    num_step_hook = tf.train.StopAtStepHook(num_steps=training_iters)
 
-    # Init the graph
-    print("Init graph")
-    init = tf.global_variables_initializer()
+    # Create a session for running operations in the Graph.
+    with tf.train.MonitoredTrainingSession(checkpoint_dir=summary_path,
+                                           hooks=[summary_hook, checkpoint_hook, num_step_hook],
+                                           scaffold=scaffold,
+                                           config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+        print("🤖 Start training...")
 
-    # Create a session for running operations in the Graph
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
-        # Initialize the variables
-        sess.run(init)
+        while not sess.should_stop():
+            # Run optimizer.
+            _, step, l, pred, color, gray = sess.run([optimizer, global_step, loss, predict_rgb, color_image_rgb, gray_image] , feed_dict={is_training: True})
 
-        # Merge all summaries
-        print("Merge all summaries")
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(train_summary, sess.graph)
+            if step % display_step == 0:
+                # Print batch loss.
+                print("📖 Iter %d, Minibatch Loss = %f" % (step, float(np.mean(l))))
 
-        # Start input enqueue threads
-        print("Start input enqueue threads")
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+                # Save testing image.
+                if step % testing_step == 0:
+                    summary_image = concat_images(gray[0], pred[0])
+                    summary_image = concat_images(summary_image, color[0])
+                    plt.imsave("%s/images/%d.png" % (training_summary, step), summary_image)
 
-        # Start training
-        print("Start training!!!")
-
-        try:
-            while not coord.should_stop():
-                # Update global_step
-                step = tf.train.global_step(sess, global_step)
-
-                # Run optimizer
-                sess.run(optimizer, feed_dict={is_training: True})
-
-                # Print batch loss
-                if step % display_step == 0:
-                    loss, pred, color, gray, summary = sess.run([cost, predict_rgb, color_image_rgb, gray_image, merged], feed_dict={is_training: False})
-                    print("Iter %d, Minibatch Loss = %f" % (step, float(np.mean(loss) / batch_size)))
-                    train_writer.add_summary(summary, step)
-                    train_writer.flush()
-
-                    # Save test image
-                    if step % test_step == 0:
-                        summary_image = concat_images(gray[0], pred[0])
-                        summary_image = concat_images(summary_image, color[0])
-                        plt.imsave("%s/images/%s.png" % (train_summary, str(step)), summary_image)
-
-                # Save model
-                if step % save_step == 0 and step != 0:
-                    save_path = saver.save(sess, "%s/model.ckpt" % model_path)
-                    print("Model saved in file: %s" % save_path)
-
-                # Stop training
-                if step == training_iters:
-                    break
-
-            print("Training Finished!")
-            sys.stdout.flush()
-
-        except tf.errors.OUT_OF_RANGE as e:
-            # Handle exception
-            print("Done training -- epoch limit reached")
-
-        finally:
-            # When done, ask the threads to stop
-            coord.request_stop()
-
-    # Wait for threads to finish
-    coord.join(threads)
-    sess.close()
+        print("🎉 Training finished!")
