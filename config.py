@@ -25,6 +25,10 @@ testing_step = 1000  # Step interval for testing and saving image during trainin
 saving_step = 10000  # Step interval for saving model during training phase.
 shuffle_buffer_size = 10000
 
+# UV channel normalization parameters
+u_norm_para = 0.435912
+v_norm_para = 0.614777
+
 # Directory for training and testing dataset.
 training_dir = "train2014"
 testing_dir = "test2014"

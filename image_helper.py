@@ -5,6 +5,7 @@
 
 import numpy as np
 import tensorflow as tf
+from config import u_norm_para, v_norm_para
 
 
 def rgb_to_yuv(rgb_image, scope):
@@ -15,27 +16,23 @@ def rgb_to_yuv(rgb_image, scope):
     :return: an image with YUV color space
     """
     with tf.name_scope(scope):
-        # Map from 0.0 ~ 1.0 (float) to 0 ~ 255 (int).
-        rgb_image_256 = tf.cast(tf.multiply(rgb_image, 255), tf.int16)
-
         # Get r, g, b channel.
-        _r = tf.slice(rgb_image_256, [0, 0, 0, 0], [-1, -1, -1, 1])
-        _g = tf.slice(rgb_image_256, [0, 0, 0, 1], [-1, -1, -1, 1])
-        _b = tf.slice(rgb_image_256, [0, 0, 0, 2], [-1, -1, -1, 1])
+        _r = tf.slice(rgb_image, [0, 0, 0, 0], [-1, -1, -1, 1])
+        _g = tf.slice(rgb_image, [0, 0, 0, 1], [-1, -1, -1, 1])
+        _b = tf.slice(rgb_image, [0, 0, 0, 2], [-1, -1, -1, 1])
 
         # Calculate y, u, v channel.
-        # https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ms893078(v=msdn.10)
-        _y = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, 66), tf.multiply(_g, 129), tf.multiply(_b, 25)]), 128), 8), 16)
-        _u = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, -38), tf.multiply(_g, -74), tf.multiply(_b, 112)]), 128), 8), 128)
-        _v = tf.add(tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_r, 112), tf.multiply(_g, -94), tf.multiply(_b, -18)]), 128), 8), 128)
+        # https://www.pcmag.com/encyclopedia/term/55166/yuv-rgb-conversion-formulas
+        _y = 0.299 * _r + 0.587 * _g + 0.114 * _b
+        _u = 0.492 * (_b - _y)
+        _v = 0.877 * (_r - _y)
 
-        # Map y from 16 ~ 235 to 0.0 ~ 1.0, u and v from 16 ~ 240 to 0.0 ~ 1.0.
-        _y = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_y, 16), tf.float32), 219.), 0.0, 1.0)
-        _u = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_u, 16), tf.float32), 224.), 0.0, 1.0)
-        _v = tf.clip_by_value(tf.div(tf.cast(tf.subtract(_v, 16), tf.float32), 224.), 0.0, 1.0)
+        # Normalize u, v channel.
+        _u = _u / (u_norm_para * 2) + 0.5
+        _v = _v / (v_norm_para * 2) + 0.5
 
         # Get image with YUV color space.
-        return tf.concat(axis=3, values=[_y, _u, _v])
+        return tf.clip_by_value(tf.concat(axis=3, values=[_y, _u, _v]), 0.0, 1.0)
 
 def yuv_to_rgb(yuv_image, scope):
     """
@@ -50,22 +47,18 @@ def yuv_to_rgb(yuv_image, scope):
         _u = tf.slice(yuv_image, [0, 0, 0, 1], [-1, -1, -1, 1])
         _v = tf.slice(yuv_image, [0, 0, 0, 2], [-1, -1, -1, 1])
 
-        # Map y from 0.0 ~ 1.0 to 16 ~ 235, u and v from 0.0 ~ 1.0 to 16 ~ 240.
-        _y = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_y, 219), 16), tf.int16), 16, 235)
-        _u = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_u, 224), 16), tf.int16), 16, 240)
-        _v = tf.clip_by_value(tf.cast(tf.add(tf.multiply(_v, 224), 16), tf.int16), 16, 240)
+        # Denormalize u, v channel.
+        _u = (_u - 0.5) * u_norm_para * 2
+        _v = (_v - 0.5) * v_norm_para * 2
 
         # Calculate r, g, b channel.
-        # https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ms893078(v=msdn.10)
-        _c = tf.subtract(_y, 16)
-        _d = tf.subtract(_u, 128)
-        _e = tf.subtract(_v, 128)
-        _r = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_e, 409)]), 128), 8)
-        _g = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_d, -100), tf.multiply(_e, -208)]), 128), 8)
-        _b = tf.bitwise.right_shift(tf.add(tf.add_n([tf.multiply(_c, 298), tf.multiply(_d, 516)]), 128), 8)
+        # https://www.pcmag.com/encyclopedia/term/55166/yuv-rgb-conversion-formulas
+        _r = _y + 1.14 * _v
+        _g = _y - 0.395 * _u - 0.581 * _v
+        _b = _y + 2.033 * _u
 
         # Get image with RGB color space.
-        return tf.clip_by_value(tf.div(tf.cast(tf.concat(axis=3, values=[_r, _g, _b]), tf.float32), 255), 0.0, 1.0)
+        return tf.clip_by_value(tf.concat(axis=3, values=[_r, _g, _b]), 0.0, 1.0)
 
 def concat_images(img_a, img_b):
     """
