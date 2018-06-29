@@ -16,17 +16,19 @@ if __name__ == '__main__':
     # Init model.
     is_training, global_step, optimizer, loss, predict_rgb, color_image_rgb, gray_image, _ = init_model(train=True)
 
-    # Init scaffold and hooks.
+    # Init scaffold, hooks and config.
     scaffold = tf.train.Scaffold()
     summary_hook = tf.train.SummarySaverHook(output_dir=training_summary, save_steps=display_step, scaffold=scaffold)
     checkpoint_hook = tf.train.CheckpointSaverHook(checkpoint_dir=summary_path, save_steps=saving_step, scaffold=scaffold)
     num_step_hook = tf.train.StopAtStepHook(num_steps=training_iters)
+    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+    config.gpu_options.allow_growth = True # pylint: disable=E1101
 
     # Create a session for running operations in the Graph.
     with tf.train.MonitoredTrainingSession(checkpoint_dir=summary_path,
                                            hooks=[summary_hook, checkpoint_hook, num_step_hook],
                                            scaffold=scaffold,
-                                           config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
+                                           config=config) as sess:
         print("🤖 Start training...")
 
         while not sess.should_stop():
