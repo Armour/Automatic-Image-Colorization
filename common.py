@@ -61,29 +61,26 @@ def init_model(train=True):
         # Get dataset iterator.
         iterator = get_dataset_iterator(file_paths, batch_size, shuffle=True)
 
-        with tf.name_scope("input_image"):
-            # Get color image.
-            color_image_rgb = iterator.get_next()
-            color_image_yuv = rgb_to_yuv(color_image_rgb, "color_image_yuv")
+        # Get color image.
+        color_image_rgb = iterator.get_next(name="color_image_rgb")
+        color_image_yuv = rgb_to_yuv(color_image_rgb, "color_image_yuv")
 
-            # Get gray image.
-            gray_image_one_channel = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image_one_channel")
-            gray_image_three_channels = tf.image.grayscale_to_rgb(gray_image_one_channel, name="gray_image_three_channels")
-            gray_image_yuv = rgb_to_yuv(gray_image_three_channels, "gray_image_yuv")
+        # Get gray image.
+        gray_image_one_channel = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image_one_channel")
+        gray_image_three_channels = tf.image.grayscale_to_rgb(gray_image_one_channel, name="gray_image_three_channels")
+        gray_image_yuv = rgb_to_yuv(gray_image_three_channels, "gray_image_yuv")
 
         # Build vgg model.
         with tf.name_scope("content_vgg"):
             vgg.build(gray_image_three_channels)
 
         # Predict model.
-        with tf.name_scope("predict"):
-            predict = residual_encoder.build(input_data=gray_image_three_channels, vgg=vgg, is_training=is_training)
-            predict_yuv = tf.concat(axis=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
-            predict_rgb = yuv_to_rgb(predict_yuv, "predict_rgb")
+        predict = residual_encoder.build(input_data=gray_image_three_channels, vgg=vgg, is_training=is_training)
+        predict_yuv = tf.concat(axis=3, values=[tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y"), predict], name="predict_yuv")
+        predict_rgb = yuv_to_rgb(predict_yuv, "predict_rgb")
 
         # Get loss.
-        with tf.name_scope("loss"):
-            loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
+        loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
 
         # Prepare optimizer.
         with tf.name_scope("optimizer"):
