@@ -71,7 +71,7 @@ def init_model(train=True):
         gray_image_yuv = rgb_to_yuv(gray_image_three_channels, "gray_image_yuv")
 
         # Build vgg model.
-        with tf.name_scope("content_vgg"):
+        with tf.name_scope("vgg16"):
             vgg.build(gray_image_three_channels)
 
         # Predict model.
@@ -83,10 +83,9 @@ def init_model(train=True):
         loss = residual_encoder.get_loss(predict_val=predict, real_val=tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv"))
 
         # Prepare optimizer.
-        with tf.name_scope("optimizer"):
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            with tf.control_dependencies(update_ops):
-                optimizer = tf.train.AdamOptimizer().minimize(loss, global_step=global_step)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            optimizer = tf.train.AdamOptimizer().minimize(loss, global_step=global_step, name='optimizer')
 
         # Init tensorflow summaries.
         print("⏳ Init tensorflow summaries...")

@@ -17,12 +17,12 @@ image_size = 224
 image_resize_method = tf.image.ResizeMethod.BILINEAR
 
 # Parameters for neural network.
-training_iters = 2000000  # The training iterations number.
+training_iters = 3000000  # The training iterations number.
 batch_size = 6 # Batch size for training data.
 display_step = 50  # Step interval for displaying loss and saving summary during training phase.
 testing_step = 1000  # Step interval for testing and saving image during training phase.
 saving_step = 10000  # Step interval for saving model during training phase.
-shuffle_buffer_size = 10000
+shuffle_buffer_size = 2000
 
 # UV channel normalization parameters
 u_norm_para = 0.435912

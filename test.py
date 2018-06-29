@@ -21,8 +21,7 @@ if __name__ == '__main__':
     summary_hook = tf.train.SummarySaverHook(output_dir=testing_summary, save_steps=display_step, scaffold=scaffold)
     checkpoint_hook = tf.train.CheckpointSaverHook(checkpoint_dir=summary_path, save_steps=saving_step, scaffold=scaffold)
     num_step_hook = tf.train.StopAtStepHook(num_steps=len(file_paths))
-    config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
-    config.gpu_options.allow_growth = True # pylint: disable=E1101
+    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True, gpu_options=(tf.GPUOptions(allow_growth=True))
     session_creator = tf.train.ChiefSessionCreator(scaffold=scaffold, config=config, checkpoint_dir=summary_path)
 
     # Create a session for running operations in the Graph.
