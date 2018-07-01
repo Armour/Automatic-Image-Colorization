@@ -3,6 +3,11 @@
 
 """Test model."""
 
+__author__ = 'Chong Guo'
+__copyright__ = 'Copyright 2018, Chong Guo'
+__license__ = 'GPL'
+__email__ = 'armourcy@email.com'
+
 import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt

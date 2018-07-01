@@ -1,4 +1,8 @@
-# Residual Encoder Network for Colorization
+# Automactic Image Colorization using Residual Encoder Network
+
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Template from jarvis](https://img.shields.io/badge/Hi-Jarvis-ff69b4.svg)](https://github.com/Armour/Jarvis)
 
 ## Overview
 
@@ -42,6 +46,10 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * [raghavgupta0296/ColourNet](https://github.com/raghavgupta0296/ColourNet)
 * [pretrained VGG16 npy file](https://github.com/machrisaa/tensorflow-vgg)
 
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/Armour/Automactic-Image-Colorization/blob/master/.github/CONTRIBUTING.md)
+
 ## License
 
-GNU GPL 3.0 for personal or research use. COMMERCIAL USE PROHIBITED.
+[GNU GPL 3.0](https://github.com/Armour/Automactic-Image-Colorization/blob/master/LICENSE) for personal or research use. COMMERCIAL USE PROHIBITED.

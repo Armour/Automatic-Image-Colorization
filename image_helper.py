@@ -3,6 +3,11 @@
 
 """Helper functions for image manipulation."""
 
+__author__ = 'Chong Guo'
+__copyright__ = 'Copyright 2018, Chong Guo'
+__license__ = 'GPL'
+__email__ = 'armourcy@email.com'
+
 import numpy as np
 import tensorflow as tf
 from config import u_norm_para, v_norm_para

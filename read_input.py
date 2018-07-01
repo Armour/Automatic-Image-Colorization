@@ -3,6 +3,11 @@
 
 """Helper functions for read input."""
 
+__author__ = 'Chong Guo'
+__copyright__ = 'Copyright 2018, Chong Guo'
+__license__ = 'GPL'
+__email__ = 'armourcy@email.com'
+
 import os
 import cv2
 import imghdr
