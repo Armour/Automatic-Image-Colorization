@@ -1,4 +1,4 @@
-# Automactic Image Colorization
+# Automatic Image Colorization
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -48,8 +48,8 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/Armour/Automactic-Image-Colorization/blob/master/.github/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/Armour/Automatic-Image-Colorization/blob/master/.github/CONTRIBUTING.md)
 
 ## License
 
-[GNU GPL 3.0](https://github.com/Armour/Automactic-Image-Colorization/blob/master/LICENSE) for personal or research use. COMMERCIAL USE PROHIBITED.
+[GNU GPL 3.0](https://github.com/Armour/Automatic-Image-Colorization/blob/master/LICENSE) for personal or research use. COMMERCIAL USE PROHIBITED.

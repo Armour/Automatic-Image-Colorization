@@ -2,11 +2,11 @@
 
 ## Code of Conduct
 
-Help us keep Automactic-Image-Colorization open and inclusive. Please read and follow the [Code of Conduct](https://github.com/Armour/Automactic-Image-Colorization/blob/master/.github/CODE_OF_CONDUCT.md).
+Help us keep Automatic-Image-Colorization open and inclusive. Please read and follow the [Code of Conduct](https://github.com/Armour/Automatic-Image-Colorization/blob/master/.github/CODE_OF_CONDUCT.md).
 
 ## Found a Bug
 
-If you find a bug in the source code, you can help us by [submitting an issue](#submitting-an-issue) to our [GitHub Repository](https://github.com/Armour/Automactic-Image-Colorization). Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
+If you find a bug in the source code, you can help us by [submitting an issue](#submitting-an-issue) to our [GitHub Repository](https://github.com/Armour/Automatic-Image-Colorization). Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
 
 ## Missing a Feature
 
@@ -28,13 +28,13 @@ We will be insisting on a minimal reproduce scenario in order to save maintainer
 
 Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that doesn't have enough info to be reproduced.
 
-You can file new issues by filling out the [new issue form](https://github.com/Armour/Automactic-Image-Colorization/issues/new).
+You can file new issues by filling out the [new issue form](https://github.com/Armour/Automatic-Image-Colorization/issues/new).
 
 ### Submitting a Pull Request
 
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-1. Search [GitHub](https://github.com/Armour/Automactic-Image-Colorization/pulls) for an open or closed PR that relates to your submission. You don't want to duplicate effort.
+1. Search [GitHub](https://github.com/Armour/Automatic-Image-Colorization/pulls) for an open or closed PR that relates to your submission. You don't want to duplicate effort.
 
 1. Fork this repo.
 
@@ -93,4 +93,4 @@ from the main (upstream) repository:
 
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more readable messages** that are easy to follow when looking through the **project history**.  But also, we use the git commit messages to **generate the change log**.
 
-Please read and follow the [Commit Message Format](https://github.com/Armour/Automactic-Image-Colorization/blob/master/.github/COMMIT_CONVENTION.md).
+Please read and follow the [Commit Message Format](https://github.com/Armour/Automatic-Image-Colorization/blob/master/.github/COMMIT_CONVENTION.md).
