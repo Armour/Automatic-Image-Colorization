@@ -15,7 +15,7 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * `read_input.py`: all functions related to input
 * `residual_encoder.py`: the residual encoder model
 * `common.py`: the common part for training and testing, which is mainly the workflow for this model
-* `train.py`: train the residual encoder model using Tensorflow built-in GradientDescentOptimizer
+* `train.py`: train the residual encoder model using Tensorflow built-in AdamOptimizer
 * `test.py`: test your own images and save the output images
 
 ## Tensorflow graph
@@ -26,11 +26,11 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 
 * First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
 
-* Use pre-trained residual encoder model
+* Option 1: Use pre-trained residual encoder model
   * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/2.0)
   * Unzip all files to `summary_path` (you can change this path in `config.py`)
 
-* Train your own model
+* Option 2: Train your own model!
   1. Change the `batch_size` and `training_iters` if you want.
   2. Change `training_dir` to your directory that contains all your training jpg images
   3. Run `python train.py`
@@ -54,7 +54,7 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * ![11](images/11.png)
 * ![12](images/12.png)
 
-More examples can be found at [sample_output_images](https://github.com/Armour/Automatic-Image-Colorization/blob/master/sample_output_images) folder.
+* More example output images can be found in [sample_output_images](https://github.com/Armour/Automatic-Image-Colorization/blob/master/sample_output_images) folder.
 
 ## References
 

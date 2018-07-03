@@ -94,7 +94,7 @@ class ResidualEncoder(object):
         if debug:
             assert input_data.get_shape().as_list()[1:] == [224, 224, 3]
 
-        # Batch norm and 1x1 convolutional layer 4.
+        # Batch norm and 1x1 convolutional layer 4
         bn_4 = self.batch_normal(vgg.conv4_3, "bn_4", is_training)
         b_conv4 = self.conv_layer(bn_4, "b_conv4", is_training, bn=False)
 
@@ -102,7 +102,7 @@ class ResidualEncoder(object):
             assert bn_4.get_shape().as_list()[1:] == [28, 28, 512]
             assert b_conv4.get_shape().as_list()[1:] == [28, 28, 256]
 
-        # Backward upscale layer 4 and add convolutional layer 3.
+        # Backward upscale layer 4 and add convolutional layer 3
         b_conv4_upscale = tf.image.resize_images(b_conv4, [56, 56], method=image_resize_method)
         bn_3 = self.batch_normal(vgg.conv3_3, "bn_3", is_training)
         b_conv3_input = tf.add(bn_3, b_conv4_upscale, name="b_conv3_input")
@@ -114,7 +114,7 @@ class ResidualEncoder(object):
             assert b_conv3_input.get_shape().as_list()[1:] == [56, 56, 256]
             assert b_conv3.get_shape().as_list()[1:] == [56, 56, 128]
 
-        # Backward upscale layer 3 and add convolutional layer 2.
+        # Backward upscale layer 3 and add convolutional layer 2
         b_conv3_upscale = tf.image.resize_images(b_conv3, [112, 112], method=image_resize_method)
         bn_2 = self.batch_normal(vgg.conv2_2, "bn_2", is_training)
         b_conv2_input = tf.add(bn_2, b_conv3_upscale, name="b_conv2_input")
@@ -126,7 +126,7 @@ class ResidualEncoder(object):
             assert b_conv2_input.get_shape().as_list()[1:] == [112, 112, 128]
             assert b_conv2.get_shape().as_list()[1:] == [112, 112, 64]
 
-        # Backward upscale layer 2 and add convolutional layer 1.
+        # Backward upscale layer 2 and add convolutional layer 1
         b_conv2_upscale = tf.image.resize_images(b_conv2, [224, 224], method=image_resize_method)
         bn_1 = self.batch_normal(vgg.conv1_2, "bn_1", is_training)
         b_conv1_input = tf.add(bn_1, b_conv2_upscale, name="b_conv1_input")
@@ -138,7 +138,7 @@ class ResidualEncoder(object):
             assert b_conv1_input.get_shape().as_list()[1:] == [224, 224, 64]
             assert b_conv1.get_shape().as_list()[1:] == [224, 224, 3]
 
-        # Backward upscale layer 1 and add input layer.
+        # Backward upscale layer 1 and add input layer
         bn_0 = self.batch_normal(input_data, "bn_0", is_training)
         b_conv0_input = tf.add(bn_0, b_conv1, name="b_conv0_input")
         b_conv0 = self.conv_layer(b_conv0_input, "b_conv0", is_training)
@@ -148,7 +148,7 @@ class ResidualEncoder(object):
             assert b_conv0_input.get_shape().as_list()[1:] == [224, 224, 3]
             assert b_conv0.get_shape().as_list()[1:] == [224, 224, 3]
 
-        # Output layer.
+        # Output layer
         output_layer = self.conv_layer(b_conv0, "output_conv", is_training, relu=False)
 
         if debug:

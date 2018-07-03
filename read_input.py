@@ -28,12 +28,12 @@ def init_file_path(directory):
         print("Throwing all gray space images now... (this will take a long time if the training dataset is huge)")
 
     for file_name in os.listdir(directory):
-        # Skip files that is not jpg.
+        # Skip files that is not jpg
         file_path = '%s/%s' % (directory, file_name)
         if imghdr.what(file_path) is not 'jpeg':
             continue
         if not debug:
-            # Delete all gray space images.
+            # Delete all gray space images
             is_gray_space = True
             img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
             if len(img.shape) == 3 and img.shape[2] == 3:
@@ -63,13 +63,13 @@ def read_image(filename):
     :param filename_queue: the filename queue for image files
     :return: image with RGB color space
     """
-    # Read image file.
+    # Read image file
     content = tf.read_file(filename)
-    # Decode the image with RGB color space.
+    # Decode the image with RGB color space
     rgb_image = tf.image.decode_jpeg(content, channels=3, name="color_image_original")
-    # Resize image to the right image_size.
+    # Resize image to the right image_size
     rgb_image = tf.image.resize_images(rgb_image, [image_size, image_size], method=image_resize_method)
-    # Map all pixel element value into [0, 1].
+    # Map all pixel element value into [0, 1]
     return tf.clip_by_value(tf.div(tf.cast(rgb_image, tf.float32), 255), 0.0, 1.0, name="color_image_in_0_1")
 
 
