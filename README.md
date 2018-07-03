@@ -39,6 +39,23 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
   1. Change `testing_dir` to your directory that contains all your testing jpg images
   2. Run `python test.py`
 
+## Examples
+
+* ![1](images/1.png)
+* ![2](images/2.png)
+* ![3](images/3.png)
+* ![4](images/4.png)
+* ![5](images/5.png)
+* ![6](images/6.png)
+* ![7](images/7.png)
+* ![8](images/8.png)
+* ![9](images/9.png)
+* ![10](images/10.png)
+* ![11](images/11.png)
+* ![12](images/12.png)
+
+More examples can be found at [sample_output_images](https://github.com/Armour/Automatic-Image-Colorization/blob/master/sample_output_images) folder.
+
 ## References
 
 * [Automatic Colorization](http://tinyclouds.org/colorize/)

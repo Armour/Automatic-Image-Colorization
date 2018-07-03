@@ -23,13 +23,12 @@ if __name__ == '__main__':
 
     # Init scaffold, hooks and config
     scaffold = tf.train.Scaffold()
-    summary_hook = tf.train.SummarySaverHook(output_dir=testing_summary, save_steps=display_step, scaffold=scaffold)
     checkpoint_hook = tf.train.CheckpointSaverHook(checkpoint_dir=summary_path, save_steps=saving_step, scaffold=scaffold)
     config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True, gpu_options=(tf.GPUOptions(allow_growth=True)))
     session_creator = tf.train.ChiefSessionCreator(scaffold=scaffold, config=config, checkpoint_dir=summary_path)
 
     # Create a session for running operations in the Graph
-    with tf.train.MonitoredSession(session_creator=session_creator, hooks=[checkpoint_hook, summary_hook]) as sess:
+    with tf.train.MonitoredSession(session_creator=session_creator, hooks=[checkpoint_hook]) as sess:
         print("🤖 Start testing...")
         step = 0
         avg_loss = 0
@@ -39,15 +38,15 @@ if __name__ == '__main__':
 
             l, pred, color, gray = sess.run([loss, predict_rgb, color_image_rgb, gray_image], feed_dict={is_training: False})
 
-            if step % display_step == 0:
-                # Print batch loss.
-                print("📖 Testing iter %d, Minibatch Loss = %f" % (step, l))
-                avg_loss += float(l)
+            # Print batch loss
+            print("📖 Testing iter %d, Minibatch Loss = %f" % (step, l))
+            avg_loss += l
 
-                # Save testing image.
-                summary_image = concat_images(gray[0], pred[0])
-                summary_image = concat_images(summary_image, color[0])
-                plt.imsave("%s/images/%d.png" % (testing_summary, step), summary_image)
+            # Save all testing image
+            for i in range(batch_size):
+                summary_image = concat_images(gray[i], pred[i])
+                summary_image = concat_images(summary_image, color[i])
+                plt.imsave("%s/images/%d_%d.png" % (testing_summary, step, i), summary_image)
 
             if step >= len(file_paths) / batch_size:
                 break
