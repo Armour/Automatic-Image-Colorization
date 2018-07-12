@@ -3,10 +3,9 @@
 
 """Helper functions for image manipulation."""
 
-__author__ = 'Chong Guo'
+__author__ = 'Chong Guo <armourcy@email.com>'
 __copyright__ = 'Copyright 2018, Chong Guo'
 __license__ = 'GPL'
-__email__ = 'armourcy@email.com'
 
 import numpy as np
 import tensorflow as tf

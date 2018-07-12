@@ -8,10 +8,9 @@ See extensive documentation at
 http://tinyclouds.org/colorize/
 """
 
-__author__ = 'Chong Guo'
+__author__ = 'Chong Guo <armourcy@email.com>'
 __copyright__ = 'Copyright 2018, Chong Guo'
 __license__ = 'GPL'
-__email__ = 'armourcy@email.com'
 
 import cv2
 import tensorflow as tf
