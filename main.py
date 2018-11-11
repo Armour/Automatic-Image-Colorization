@@ -105,23 +105,6 @@ def yuv_to_rgb(yuv_image, scope):
         return tf.clip_by_value(tf.concat(axis=3, values=[_r, _g, _b]), 0.0, 1.0)
 
 
-def concat_images(img_a, img_b):
-    """
-    Combines two color image side-by-side.
-    :param img_a: image a on left
-    :param img_b: image b on right
-    :return: combined image
-    """
-    height_a, width_a = img_a.shape[:2]
-    height_b, width_b = img_b.shape[:2]
-    max_height = np.max([height_a, height_b])
-    total_width = width_a + width_b
-    new_img = np.zeros(shape=(max_height, total_width, IMAGE_CHANNELS), dtype=np.float32)
-    new_img[:height_a, :width_a] = img_a
-    new_img[:height_b, width_a:total_width] = img_b
-    return new_img
-
-
 def init_file_path(directory, debug=False):
     """
     Get the image file path array.
@@ -190,15 +173,12 @@ def data_input_func(filenames, batch_size, num_epochs=None, shuffle=False):
         dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.repeat(count=num_epochs)
-    iterator = dataset.make_one_shot_iterator()
-    return iterator.get_next()
+    return dataset
 
 
 def residual_encoder(features, labels, mode, params):
     # We don't have labels for this task
     assert labels == None
-
-    global_step = tf.train.get_or_create_global_step()
 
     # Build residual encoder model
     print("🤖 Build residual encoder model...")
@@ -240,6 +220,7 @@ def residual_encoder(features, labels, mode, params):
     tf.summary.image("gray_image", gray_image_three_channels)
     tf.summary.image("predict_image", predict_rgb)
     tf.summary.image("color_image", color_image_rgb)
+    tf.summary.image("concat_image", tf.concat([gray_image_three_channels, predict_rgb, color_image_rgb], axis=2, name="concat_image"))
 
     # Compute evaluation metrics.
     if mode == tf.estimator.ModeKeys.EVAL:
@@ -247,14 +228,8 @@ def residual_encoder(features, labels, mode, params):
 
     # Create training op.
     if mode == tf.estimator.ModeKeys.TRAIN:
-        # if global_step % params['display_loss_steps'] == 0:
-        # print("📖 Iter %d, Minibatch Loss = %f" % (global_step, loss))
-        #     if global_step % params['save_image_steps'] == 0:
-        #         summary_image = concat_images(gray[0], pred[0])
-        #         summary_image = concat_images(summary_image, color[0])
-        #         plt.imsave("%s/images/%d.png" % (training_summary, global_step), summary_image)
         optimizer = tf.train.AdamOptimizer(name='adam_optimizer')
-        train_op = optimizer.minimize(loss, global_step=global_step, name='train_op')
+        train_op = optimizer.minimize(loss, global_step=tf.train.get_or_create_global_step(), name='train_op')
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
 
 
@@ -438,10 +413,12 @@ def main(argv):
     feature_columns = [tf.feature_column.numeric_column('image', shape=(IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS))]
 
     # Create run_config to add GPU support
+    distribution = tf.contrib.distribute.MirroredStrategy()
     session_config = tf.ConfigProto(allow_soft_placement=True,
                                     log_device_placement=True,
                                     gpu_options=(tf.GPUOptions(allow_growth=True)))
     run_config = tf.estimator.RunConfig(session_config=session_config,
+                                        train_distribute=distribution,
                                         save_checkpoints_steps=args.save_model_steps,
                                         save_summary_steps=args.save_summary_steps)
 
