@@ -25,25 +25,6 @@ U_CHANNEL_NORM = 0.435912
 V_CHANNEL_NORM = 0.614777
 SHUFFLE_BUFFER_SIZE = 2000
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--debug', default=False, action='store_true',
-                    help='if enable debug mode will run all the assertions')
-parser.add_argument('--batch_size', default=6, type=int,
-                    help='number of batch size')
-parser.add_argument('--train_steps', default=1000000, type=int,
-                    help='number of training iterations')
-parser.add_argument('--save_summary_steps', default=100, type=int,
-                    help='number of steps to save summaries')
-parser.add_argument('--save_model_steps', default=10000, type=int,
-                    help='number of steps to save model')
-parser.add_argument('--training_dir', default="train2014", type=str,
-                    help='directory for training dataset')
-parser.add_argument('--validating_dir', default="val2014", type=str,
-                    help='directory for validating dataset')
-parser.add_argument('--testing_dir', default="test2014", type=str,
-                    help='directory for testing dataset')
-parser.add_argument('--summary_dir', default="summary", type=str,
-                    help='directory for tensorflow summaries')
 
 def create_folder(folder_path):
     """
@@ -77,7 +58,8 @@ def rgb_to_yuv(rgb_image, scope):
         _v = _v / (V_CHANNEL_NORM * 2) + 0.5
 
         # Get image with YUV color space
-        return tf.clip_by_value(tf.concat(axis=3, values=[_y, _u, _v]), 0.0, 1.0)
+        yuv_image = tf.concat(axis=3, values=[_y, _u, _v])
+        return tf.clip_by_value(yuv_image, 0.0, 1.0)
 
 
 def yuv_to_rgb(yuv_image, scope):
@@ -102,32 +84,31 @@ def yuv_to_rgb(yuv_image, scope):
         _b = _y + 2.033 * _u
 
         # Get image with RGB color space
-        return tf.clip_by_value(tf.concat(axis=3, values=[_r, _g, _b]), 0.0, 1.0)
+        rgb_image = tf.concat(axis=3, values=[_r, _g, _b])
+        return tf.clip_by_value(rgb_image, 0.0, 1.0)
 
 
 def init_file_path(directory, debug=False):
     """
     Get the image file path array.
     :param directory: the directory that store images
-    :param debug: if enable debug mode, will delete all gray space images
+    :param debug: if enable, will delete all gray space images
     :return: an array of image file path
     """
     paths = []
-
-    if not debug:
-        print("Throwing all gray space images now... (this will take a long time if dataset is huge)")
 
     for file_name in os.listdir(directory):
         file_path = '%s/%s' % (directory, file_name)
         # Skip all non-jpg files
         if imghdr.what(file_path) is not 'jpeg':
             continue
-        # Delete all gray space images in production mode (it takes time)
+        # Delete all gray space images (it takes time)
         if not debug:
             is_gray_space = True
             img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
             if len(img.shape) == 3 and img.shape[2] == IMAGE_CHANNELS:
-                if np.any(np.not_equal(img[0], img[1])) or np.any(np.not_equal(img[1], img[2])):
+                if np.any(np.not_equal(img[0], img[1])) or \
+                   np.any(np.not_equal(img[1], img[2])):
                     is_gray_space = False
             if is_gray_space:
                 try:
@@ -154,25 +135,27 @@ def read_image(filename):
     # Resize image to the right image size
     rgb_image_resized = tf.image.resize_images(rgb_image, [IMAGE_SIZE, IMAGE_SIZE])
     # Map all pixel element value into [0, 1]
-    rgb_image_float = tf.clip_by_value(rgb_image_resized / 255, 0.0, 1.0, name="color_image_float")
+    rgb_image_float = tf.clip_by_value(rgb_image_resized/255, 0.0, 1.0, name="color_image_float")
     return { "image": rgb_image_float }
 
 
-def data_input_func(filenames, batch_size, num_epochs=None, shuffle=False):
+def data_input_func(filenames, batch_size, shuffle=False):
     """
     Dataset input function which shuffle the input data and returns an iterator to get batches of images.
     :param filenames: filenames
     :param batch_size: batch size
-    :param num_epochs: number of epochs for producing each string before generating an OutOfRange error
-    :param shuffle: if true, the strings are randomly shuffled within each epoch
+    :param shuffle: random shuffle dataset
     :return: the batch image data iterator
     """
     dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    dataset = dataset.map(read_image)
     if shuffle:
-        dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
-    dataset = dataset.batch(batch_size=batch_size)
-    dataset = dataset.repeat(count=num_epochs)
+        dataset = dataset.apply(
+            tf.data.experimental.shuffle_and_repeat(SHUFFLE_BUFFER_SIZE))
+    else:
+        dataset = dataset.repeat()
+    dataset = dataset.apply(
+        tf.data.experimental.map_and_batch(
+            read_image, num_parallel_calls=8, batch_size=batch_size))
     return dataset
 
 
@@ -186,27 +169,28 @@ def residual_encoder(features, labels, mode, params):
 
     # Get color image
     input_layer_image = tf.feature_column.input_layer(features, params['feature_columns'])
-    color_image_rgb = tf.reshape(input_layer_image, [params['batch_size'], IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS],
-                                 name="color_image_rgb")
+    color_image_rgb = tf.reshape(input_layer_image, name="color_image_rgb",
+                          shape=[params['batch_size'], IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS])
     color_image_yuv = rgb_to_yuv(color_image_rgb, "color_image_yuv")
     color_image_uv = tf.slice(color_image_yuv, [0, 0, 0, 1], [-1, -1, -1, 2], name="color_image_uv")
 
     # Get gray image
-    gray_image_one_channel = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image_one_channel")
-    gray_image_three_channels = tf.image.grayscale_to_rgb(gray_image_one_channel, name="gray_image_three_channels")
-    gray_image_yuv = rgb_to_yuv(gray_image_three_channels, "gray_image_yuv")
+    gray_image_grayscale = tf.image.rgb_to_grayscale(color_image_rgb, name="gray_image_grayscale")
+    gray_image_rgb = tf.image.grayscale_to_rgb(gray_image_grayscale, name="gray_image_rgb")
+    gray_image_yuv = rgb_to_yuv(gray_image_rgb, "gray_image_yuv")
     gray_image_y = tf.slice(gray_image_yuv, [0, 0, 0, 0], [-1, -1, -1, 1], name="gray_image_y")
 
     # Build vgg model
     print("🤖 Load vgg16 model...")
     with tf.name_scope("vgg16"):
         vgg = vgg16.Vgg16()
-        vgg.build(gray_image_three_channels)
+        vgg.build(gray_image_rgb)
 
     # Predict model
-    predict = model.build(input_data=gray_image_three_channels, vgg=vgg, is_training=mode==tf.estimator.ModeKeys.TRAIN)
+    predict = model.build(input_data=gray_image_rgb, vgg=vgg, is_training=mode==tf.estimator.ModeKeys.TRAIN)
     predict_yuv = tf.concat(axis=3, values=[gray_image_y, predict], name="predict_yuv")
     predict_rgb = yuv_to_rgb(predict_yuv, "predict_rgb")
+    compare_result = tf.concat([gray_image_rgb, predict_rgb, color_image_rgb], axis=2, name="compare_result")
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode, predictions={})
@@ -217,10 +201,7 @@ def residual_encoder(features, labels, mode, params):
     # Init tensorflow summaries
     print("⏳ Init tensorflow summaries...")
     tf.summary.histogram("loss", loss)
-    tf.summary.image("gray_image", gray_image_three_channels)
-    tf.summary.image("predict_image", predict_rgb)
-    tf.summary.image("color_image", color_image_rgb)
-    tf.summary.image("concat_image", tf.concat([gray_image_three_channels, predict_rgb, color_image_rgb], axis=2, name="concat_image"))
+    tf.summary.image("result", compare_result)
 
     # Compute evaluation metrics.
     if mode == tf.estimator.ModeKeys.EVAL:
@@ -229,7 +210,7 @@ def residual_encoder(features, labels, mode, params):
     # Create training op.
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.AdamOptimizer(name='adam_optimizer')
-        train_op = optimizer.minimize(loss, global_step=tf.train.get_or_create_global_step(), name='train_op')
+        train_op = optimizer.minimize(loss, tf.train.get_or_create_global_step(), name='train_op')
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
 
 
@@ -238,41 +219,41 @@ class ResidualEncoder():
         # Trainable weights for each conv layer
         self.trainable_weights = {
             'b_conv4': tf.get_variable('b_conv4', trainable=True,
-                                        initializer=tf.truncated_normal([1, 1, 512, 256], stddev=0.01)),
+                           initializer=tf.truncated_normal([1, 1, 512, 256], stddev=0.01)),
             'b_conv3': tf.get_variable('b_conv3', trainable=True,
-                                        initializer=tf.truncated_normal([3, 3, 256, 128], stddev=0.01)),
+                           initializer=tf.truncated_normal([3, 3, 256, 128], stddev=0.01)),
             'b_conv2': tf.get_variable('b_conv2', trainable=True,
-                                        initializer=tf.truncated_normal([3, 3, 128, 64], stddev=0.01)),
+                           initializer=tf.truncated_normal([3, 3, 128, 64], stddev=0.01)),
             'b_conv1': tf.get_variable('b_conv1', trainable=True,
-                                        initializer=tf.truncated_normal([3, 3, 64, 3], stddev=0.01)),
+                           initializer=tf.truncated_normal([3, 3, 64, 3], stddev=0.01)),
             'b_conv0': tf.get_variable('b_conv0', trainable=True,
-                                        initializer=tf.truncated_normal([3, 3, 3, 3], stddev=0.01)),
+                           initializer=tf.truncated_normal([3, 3, 3, 3], stddev=0.01)),
             'output_conv': tf.get_variable('output_conv', trainable=True,
-                                            initializer=tf.truncated_normal([3, 3, 3, 2], stddev=0.01)),
+                               initializer=tf.truncated_normal([3, 3, 3, 2], stddev=0.01)),
         }
 
         # Gaussian blur kernel (not trainable)
-        self.gaussin_blur_3x3 = np.array([
+        self.blur_3x3 = np.array([
             [1., 2., 1.],
             [2., 4., 2.],
             [1., 2., 1.],
         ]) / 16 # (3, 3)
-        self.gaussin_blur_3x3 = np.stack((self.gaussin_blur_3x3, self.gaussin_blur_3x3), axis=-1) # (3, 3, 2)
-        self.gaussin_blur_3x3 = np.stack((self.gaussin_blur_3x3, self.gaussin_blur_3x3), axis=-1) # (3, 3, 2, 2)
-        self.gaussin_blur_3x3 = tf.get_variable('blur_3x3', trainable=False,
-                                                initializer=tf.convert_to_tensor(self.gaussin_blur_3x3, dtype=tf.float32))
+        self.blur_3x3 = np.stack((self.blur_3x3, self.blur_3x3), axis=-1) # (3, 3, 2)
+        self.blur_3x3 = np.stack((self.blur_3x3, self.blur_3x3), axis=-1) # (3, 3, 2, 2)
+        self.blur_3x3 = tf.get_variable('blur_3x3', trainable=False,
+                            initializer=tf.convert_to_tensor(self.blur_3x3, dtype=tf.float32))
 
-        self.gaussin_blur_5x5 = np.array([
+        self.blur_5x5 = np.array([
             [1.,  4.,  7.,  4., 1.],
             [4., 16., 26., 16., 4.],
             [7., 26., 41., 26., 7.],
             [4., 16., 26., 16., 4.],
             [1.,  4.,  7.,  4., 1.],
         ]) / 273 # (5, 5)
-        self.gaussin_blur_5x5 = np.stack((self.gaussin_blur_5x5, self.gaussin_blur_5x5), axis=-1) # (5, 5, 2)
-        self.gaussin_blur_5x5 = np.stack((self.gaussin_blur_5x5, self.gaussin_blur_5x5), axis=-1) # (5, 5, 2, 2)
-        self.gaussin_blur_5x5 = tf.get_variable('blur_5x5', trainable=False,
-                                                initializer=tf.convert_to_tensor(self.gaussin_blur_5x5, dtype=tf.float32))
+        self.blur_5x5 = np.stack((self.blur_5x5, self.blur_5x5), axis=-1) # (5, 5, 2)
+        self.blur_5x5 = np.stack((self.blur_5x5, self.blur_5x5), axis=-1) # (5, 5, 2, 2)
+        self.blur_5x5 = tf.get_variable('blur_5x5', trainable=False,
+                            initializer=tf.convert_to_tensor(self.blur_5x5, dtype=tf.float32))
 
     def get_loss(self, predict_val, real_val, debug=False):
         """
@@ -286,14 +267,21 @@ class ResidualEncoder():
             assert predict_val.get_shape().as_list()[1:] == [224, 224, 2]
             assert real_val.get_shape().as_list()[1:] == [224, 224, 2]
 
-        blur_real_3x3 = tf.nn.conv2d(real_val, self.gaussin_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_real_3x3")
-        blur_real_5x5 = tf.nn.conv2d(real_val, self.gaussin_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_real_5x5")
-        blur_predict_3x3 = tf.nn.conv2d(predict_val, self.gaussin_blur_3x3, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_3x3")
-        blur_predict_5x5 = tf.nn.conv2d(predict_val, self.gaussin_blur_5x5, strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_5x5")
+        blur_real_3x3 = tf.nn.conv2d(real_val, self.blur_3x3,
+                            strides=[1, 1, 1, 1], padding='SAME', name="blur_real_3x3")
+        blur_real_5x5 = tf.nn.conv2d(real_val, self.blur_5x5,
+                            strides=[1, 1, 1, 1], padding='SAME', name="blur_real_5x5")
+        blur_predict_3x3 = tf.nn.conv2d(predict_val, self.blur_3x3,
+                               strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_3x3")
+        blur_predict_5x5 = tf.nn.conv2d(predict_val, self.blur_5x5,
+                               strides=[1, 1, 1, 1], padding='SAME', name="blur_predict_5x5")
 
-        diff_original = tf.reduce_sum(tf.squared_difference(predict_val, real_val), name="diff_original")
-        diff_blur_3x3 = tf.reduce_sum(tf.squared_difference(blur_predict_3x3, blur_real_3x3), name="diff_blur_3x3")
-        diff_blur_5x5 = tf.reduce_sum(tf.squared_difference(blur_predict_5x5, blur_real_5x5), name="diff_blur_5x5")
+        diff_original = tf.reduce_sum(tf.squared_difference(predict_val, real_val),
+                            name="diff_original")
+        diff_blur_3x3 = tf.reduce_sum(tf.squared_difference(blur_predict_3x3, blur_real_3x3),
+                            name="diff_blur_3x3")
+        diff_blur_5x5 = tf.reduce_sum(tf.squared_difference(blur_predict_5x5, blur_real_5x5),
+                           name="diff_blur_5x5")
         return (diff_original + diff_blur_3x3 + diff_blur_5x5) / 3
 
     def batch_normal(self, input_data, scope, is_training):
@@ -304,7 +292,6 @@ class ResidualEncoder():
         :param is_training: the flag indicate if it is training
         :return: normalized data
         """
-        #TODO: try to use keras layer instead
         return tf.layers.batch_normalization(input_data, training=is_training, name=scope)
 
     def conv_layer(self, layer_input, scope, is_training, relu=True, bn=True):
@@ -318,7 +305,8 @@ class ResidualEncoder():
         :return: the layer data after convolution
         """
         with tf.name_scope(scope):
-            output = tf.nn.conv2d(layer_input, self.trainable_weights[scope], strides=[1, 1, 1, 1], padding='SAME', name="conv")
+            output = tf.nn.conv2d(layer_input, self.trainable_weights[scope],
+                         strides=[1, 1, 1, 1], padding='SAME', name="conv")
             if bn:
                 output = self.batch_normal(output, is_training=is_training, scope=scope + '_bn')
             if relu:
@@ -403,6 +391,25 @@ class ResidualEncoder():
 
 
 def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help='if enable debug mode will run all the assertions')
+    parser.add_argument('--batch_size', default=6, type=int,
+                        help='number of batch size')
+    parser.add_argument('--train_steps', default=1000000, type=int,
+                        help='number of training iterations')
+    parser.add_argument('--save_summary_steps', default=500, type=int,
+                        help='number of steps to save summaries')
+    parser.add_argument('--save_model_steps', default=10000, type=int,
+                        help='number of steps to save model')
+    parser.add_argument('--training_dir', default="train2014", type=str,
+                        help='directory for training dataset')
+    parser.add_argument('--validating_dir', default="val2014", type=str,
+                        help='directory for validating dataset')
+    parser.add_argument('--testing_dir', default="test2014", type=str,
+                        help='directory for testing dataset')
+    parser.add_argument('--summary_dir', default="summary", type=str,
+                        help='directory for tensorflow summaries')
     args = parser.parse_args(argv[1:])
 
     # Create summary folder if not exist
@@ -410,13 +417,15 @@ def main(argv):
     create_folder(args.summary_dir + "/test/images")
 
     # Feature columns describe how to use the input
-    feature_columns = [tf.feature_column.numeric_column('image', shape=(IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS))]
+    feature_columns = [tf.feature_column.numeric_column('image',
+                           shape=(IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS))]
 
     # Create run_config to add GPU support
     distribution = tf.contrib.distribute.MirroredStrategy()
+    gpu_options = tf.GPUOptions(allow_growth=True)
     session_config = tf.ConfigProto(allow_soft_placement=True,
                                     log_device_placement=True,
-                                    gpu_options=(tf.GPUOptions(allow_growth=True)))
+                                    gpu_options=gpu_options)
     run_config = tf.estimator.RunConfig(session_config=session_config,
                                         train_distribute=distribution,
                                         save_checkpoints_steps=args.save_model_steps,
@@ -433,7 +442,7 @@ def main(argv):
         }
     )
 
-    # Train the Model
+    # Train model
     print("🤖 Start training...")
     classifier.train(
         input_fn=lambda:data_input_func(init_file_path(args.training_dir, debug=args.debug),
@@ -441,18 +450,17 @@ def main(argv):
         steps=args.train_steps)
     print("🎉 Training finished!")
 
-    # Evaluate the model
+    # Evaluate model
     print("🤖 Start testing...")
     eval_result = classifier.evaluate(
         input_fn=lambda:data_input_func(init_file_path(args.testing_dir, debug=args.debug),
                                         batch_size=args.batch_size, shuffle=False))
     print("🎉 Testing finished!")
-    # print("👀 Total average loss: %f" % (avg_loss / len(file_paths)))
-    print('👀 Test set loss: {loss:0.3f}\n'.format(**eval_result))
+    print('👀 Test set loss: {loss:0.4f}\n'.format(**eval_result))
 
 
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
-    np.random.seed(12345678)
-    tf.set_random_seed(12345678)
+    np.random.seed(42)
+    tf.set_random_seed(42)
     tf.app.run(main)
