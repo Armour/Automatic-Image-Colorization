@@ -42,7 +42,7 @@ if __name__ == '__main__':
             avg_loss += l
 
             # Save all testing image
-            for i in range(batch_size):
+            for i in range(len(color)):
                 summary_image = concat_images(gray[i], pred[i])
                 summary_image = concat_images(summary_image, color[i])
                 plt.imsave("%s/images/%d_%d.png" % (testing_summary, step, i), summary_image)
