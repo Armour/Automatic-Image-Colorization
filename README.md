@@ -8,6 +8,8 @@
 
 This is a Tensorflow implementation of the Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/) and the pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
 
+**For latest tensorflow with [estimator](https://www.tensorflow.org/guide/estimators) support, please check [tf-1.12](https://github.com/Armour/Automatic-Image-Colorization/tree/tf-1.12) branch. (still under development, the training code is working now)**
+
 ## Structure
 
 * `config.py`: config variables like batch size, training_iters and so on
