@@ -6,9 +6,9 @@
 
 ## Overview
 
-This is a Tensorflow implementation of the Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/) and the pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
+This is a TensorFlow implementation of the Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/) and the pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
 
-**For latest tensorflow with [estimator](https://www.tensorflow.org/guide/estimators) support, please check [tf-1.12](https://github.com/Armour/Automatic-Image-Colorization/tree/tf-1.12) branch. (still under development, the training code is working now)**
+**For latest TensorFlow with [estimator](https://www.tensorflow.org/guide/estimators) support, please check [tf-1.12](https://github.com/Armour/Automatic-Image-Colorization/tree/tf-1.12) branch. (still under development, the training code is working now)**
 
 ## Structure
 
@@ -17,10 +17,10 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * `read_input.py`: all functions related to input
 * `residual_encoder.py`: the residual encoder model
 * `common.py`: the common part for training and testing, which is mainly the workflow for this model
-* `train.py`: train the residual encoder model using Tensorflow built-in AdamOptimizer
+* `train.py`: train the residual encoder model using TensorFlow built-in AdamOptimizer
 * `test.py`: test your own images and save the output images
 
-## Tensorflow graph
+## TensorFlow graph
 
 ![residual_encoder](images/residual_encoder.png)
 
@@ -29,16 +29,16 @@ This is a Tensorflow implementation of the Residual Encoder Network based on [Au
 * First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
 
 * Option 1: Use pre-trained residual encoder model
-  * Model can be downloaded [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/2.0)
+  * Download model [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/2.0)
   * Unzip all files to `summary_path` (you can change this path in `config.py`)
 
 * Option 2: Train your own model!
   1. Change the `batch_size` and `training_iters` if you want.
-  2. Change `training_dir` to your directory that contains all your training jpg images
+  2. Change `training_dir` to your directory that has all your training jpg images
   3. Run `python train.py`
 
 * Test
-  1. Change `testing_dir` to your directory that contains all your testing jpg images
+  1. Change `testing_dir` to your directory that has all your testing jpg images
   2. Run `python test.py`
 
 ## Examples
