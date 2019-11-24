@@ -34,7 +34,7 @@ v_norm_para = 0.614777
 
 # Directory for training and testing dataset
 training_dir = "train2014"
-testing_dir = "test2014"
+testing_dir = "vgg/test_data"
 
 # Model, result and generated images stored path
 summary_path = "summary"
