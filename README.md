@@ -8,7 +8,7 @@
 
 This is a TensorFlow implementation of the Residual Encoder Network based on [Automatic Colorization](http://tinyclouds.org/colorize/) and the pre-trained VGG16 model from [https://github.com/machrisaa/tensorflow-vgg](https://github.com/machrisaa/tensorflow-vgg)
 
-**For latest TensorFlow with [estimator](https://www.tensorflow.org/guide/estimators) support, please check [tf-1.12](https://github.com/Armour/Automatic-Image-Colorization/tree/tf-1.12) branch. (still under development, the training code is working now)**
+**For latest TensorFlow with [estimator](https://www.tensorflow.org/guide/estimators) support, check [tf-1.12](https://github.com/Armour/Automatic-Image-Colorization/tree/tf-1.12) branch. (still under development, the training code is working now)**
 
 ## Structure
 
@@ -26,7 +26,7 @@ This is a TensorFlow implementation of the Residual Encoder Network based on [Au
 
 ## How to use
 
-* First please download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
+* Download pre-trained VGG16 model [vgg16.npy](https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM) to vgg folder
 
 * Option 1: Use pre-trained residual encoder model
   * Download model [here](https://github.com/Armour/Automatic-Image-Colorization/releases/tag/2.0)
